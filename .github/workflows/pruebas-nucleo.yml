@@ -1,0 +1,24 @@
+name: Pruebas del Núcleo
+
+# Compila el Núcleo con .NET Standard 2.1 y C# 9 (como Unity) y corre sus pruebas sin licencia de Unity.
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  pruebas:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar el repositorio (sin archivos LFS)
+        uses: actions/checkout@v4
+        with:
+          lfs: false
+
+      - name: Instalar .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Compilar y ejecutar pruebas
+        run: dotnet test CI/PruebasNucleo/PruebasNucleo.csproj --configuration Release --logger "console;verbosity=normal"

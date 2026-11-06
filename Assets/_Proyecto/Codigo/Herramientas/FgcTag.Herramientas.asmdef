@@ -1,0 +1,23 @@
+{
+    "name": "FgcTag.Herramientas",
+    "rootNamespace": "FgcTag.Herramientas",
+    "references": [
+        "FgcTag.Nucleo",
+        "FgcTag.Contenido",
+        "FgcTag.Entrada",
+        "FgcTag.Red",
+        "FgcTag.Presentacion",
+        "FgcTag.Interfaz"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

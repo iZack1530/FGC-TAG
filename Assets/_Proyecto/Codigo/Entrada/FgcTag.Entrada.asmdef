@@ -1,0 +1,16 @@
+{
+    "name": "FgcTag.Entrada",
+    "rootNamespace": "FgcTag.Entrada",
+    "references": [
+        "FgcTag.Nucleo"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

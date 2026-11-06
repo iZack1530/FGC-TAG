@@ -1,0 +1,65 @@
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 4
+
+[*.{json,asmdef,yml,yaml,csproj}]
+indent_size = 2
+
+[*.md]
+trim_trailing_whitespace = false
+
+[*.cs]
+# Organización
+dotnet_sort_system_directives_first = true
+csharp_style_namespace_declarations = block_scoped:suggestion
+csharp_new_line_before_open_brace = all
+csharp_prefer_braces = true:warning
+csharp_style_var_for_built_in_types = true:suggestion
+csharp_style_var_when_type_is_apparent = true:suggestion
+csharp_style_expression_bodied_methods = when_on_single_line:suggestion
+csharp_style_expression_bodied_properties = true:suggestion
+dotnet_style_readonly_field = true:warning
+dotnet_style_qualification_for_field = false:suggestion
+dotnet_style_qualification_for_method = false:suggestion
+
+# Nombres: PascalCase para tipos y miembros públicos
+dotnet_naming_symbols.tipos.applicable_kinds = class, struct, interface, enum, delegate
+dotnet_naming_style.pascal.capitalization = pascal_case
+dotnet_naming_rule.tipos_pascal.symbols = tipos
+dotnet_naming_rule.tipos_pascal.style = pascal
+dotnet_naming_rule.tipos_pascal.severity = warning
+
+dotnet_naming_symbols.miembros_publicos.applicable_kinds = method, property, event, field
+dotnet_naming_symbols.miembros_publicos.applicable_accessibilities = public, internal, protected
+dotnet_naming_rule.miembros_publicos_pascal.symbols = miembros_publicos
+dotnet_naming_rule.miembros_publicos_pascal.style = pascal
+dotnet_naming_rule.miembros_publicos_pascal.severity = warning
+
+# Constantes en PascalCase
+dotnet_naming_symbols.constantes.applicable_kinds = field
+dotnet_naming_symbols.constantes.required_modifiers = const
+dotnet_naming_rule.constantes_pascal.symbols = constantes
+dotnet_naming_rule.constantes_pascal.style = pascal
+dotnet_naming_rule.constantes_pascal.severity = warning
+
+# Campos privados: _camelCase
+dotnet_naming_symbols.campos_privados.applicable_kinds = field
+dotnet_naming_symbols.campos_privados.applicable_accessibilities = private
+dotnet_naming_style.guion_camel.capitalization = camel_case
+dotnet_naming_style.guion_camel.required_prefix = _
+dotnet_naming_rule.campos_privados_guion.symbols = campos_privados
+dotnet_naming_rule.campos_privados_guion.style = guion_camel
+dotnet_naming_rule.campos_privados_guion.severity = warning
+
+# Parámetros y variables locales: camelCase
+dotnet_naming_symbols.locales.applicable_kinds = parameter, local
+dotnet_naming_style.camel.capitalization = camel_case
+dotnet_naming_rule.locales_camel.symbols = locales
+dotnet_naming_rule.locales_camel.style = camel
+dotnet_naming_rule.locales_camel.severity = warning

@@ -1,0 +1,57 @@
+# Carpetas generadas por Unity
+/[Ll]ibrary/
+/[Tt]emp/
+/[Oo]bj/
+/[Bb]uild/
+/[Bb]uilds/
+/[Ll]ogs/
+/[Uu]ser[Ss]ettings/
+/[Mm]emoryCaptures/
+/[Rr]ecordings/
+
+# Metadatos de carpetas o archivos ignorados
+/[Aa]ssets/[Ss]treamingAssets/aa.meta
+/[Aa]ssets/[Ss]treamingAssets/aa/*
+
+# Proyectos y soluciones que Unity e IDE regeneran en la raíz
+/*.csproj
+/*.unityproj
+/*.sln
+/*.slnx
+/*.suo
+/*.tmp
+/*.user
+/*.userprefs
+/*.pidb
+/*.booproj
+/*.svd
+/*.pdb
+/*.mdb
+/*.opendb
+/*.VC.db
+.vs/
+.vscode/
+.idea/
+.consulo/
+
+# Compilación de la integración continua
+/CI/**/bin/
+/CI/**/obj/
+/CI/**/TestResults/
+
+# Respaldos de Blender y archivos temporales de arte
+*.blend1
+*.blend2
+*.tmp.psd
+
+# Compilaciones y reportes de fallos
+*.apk
+*.aab
+*.unitypackage
+crashlytics-build.properties
+sysinfo.txt
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
+desktop.ini
