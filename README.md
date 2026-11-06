@@ -18,12 +18,28 @@ El repositorio trae el código y la configuración de ensamblados; Unity genera 
 
 1. Clona el repositorio: `git clone https://github.com/iZack1530/FGC-TAG.git`.
 2. En Unity Hub: **Agregar → Agregar proyecto desde el disco** y elige la carpeta clonada. Unity creará `Packages/` y completará `ProjectSettings/`.
-3. En **Window → Package Manager**, instala **Universal RP** y confirma que **Test Framework** está instalado.
+3. En **Window → Package Manager**, instala **Universal RP** y **Input System**, y confirma que **Test Framework** está instalado. Si Unity pregunta si quieres activar el nuevo sistema de entrada, acepta y deja que se reinicie.
 4. En **Edit → Project Settings → Editor**, verifica *Asset Serialization: Force Text* y *Version Control: Visible Meta Files*.
 5. Abre **Window → General → Test Runner → EditMode** y ejecuta las pruebas de `FgcTag.Pruebas.Nucleo`; deben pasar todas.
 6. Sube a Git `Packages/manifest.json`, `Packages/packages-lock.json`, `ProjectSettings/` y todos los archivos `.meta` generados.
 
 Si Unity Hub no acepta la carpeta, crea un proyecto nuevo con la plantilla **Universal 3D** en otra ubicación y copia sus carpetas `Packages/` y `ProjectSettings/` dentro del repositorio, conservando `ProjectSettings/ProjectVersion.txt`.
+
+## Probar el prototipo de cajas grises
+
+1. Crea una escena nueva (**File → New Scene → Basic (URP)**) y guárdala como `Assets/_Proyecto/Escenas/PruebaCajasGrises.unity`.
+2. Crea un GameObject vacío llamado `Partida` y agrégale el componente **Arranque Partida Prueba**.
+3. Pulsa Play. El componente crea el piso y los dos luchadores, y coloca la cámara.
+
+| Acción | Jugador 1 (teclado) | Jugador 2 (teclado) | Mando |
+| --- | --- | --- | --- |
+| Moverse | W A S D | Flechas | Cruceta o palanca izquierda |
+| Agacharse | S | Flecha abajo | Abajo |
+| Débil / Medio / Fuerte | U / I / O | Num 4 / 5 / 6 | Cuadrado-X / Triángulo-Y / Círculo-B |
+| Especial | J | Num 1 | Equis-A |
+| Asistencias | K / L | Num 2 / 3 | L1 / R1 |
+
+El primer mando conectado es del jugador 1 y el segundo del jugador 2. La esquina superior izquierda muestra el frame, la suma de verificación y el estado de cada luchador.
 
 ## Estructura
 
@@ -37,6 +53,7 @@ Assets/
     Presentacion/  Animación en pasos, render, VFX, cámara y audio
     Interfaz/      Menús, HUD y entrenamiento
     Herramientas/  Herramientas de editor
+    Arranque/      Une las capas en escenas jugables (bucle de 60 Hz)
   Pruebas/Nucleo/  Pruebas del Núcleo (Unity Test Runner y CI)
 CI/                Proyectos .NET que compilan y prueban el Núcleo sin Unity
 ```

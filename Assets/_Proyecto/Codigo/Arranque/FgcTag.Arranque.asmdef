@@ -1,0 +1,19 @@
+{
+    "name": "FgcTag.Arranque",
+    "rootNamespace": "FgcTag.Arranque",
+    "references": [
+        "FgcTag.Nucleo",
+        "FgcTag.Contenido",
+        "FgcTag.Entrada",
+        "FgcTag.Presentacion"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
