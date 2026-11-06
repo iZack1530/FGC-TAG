@@ -27,8 +27,8 @@ namespace FgcTag.Nucleo.Combate
 
             return new EstadoPartida(
                 0,
-                new EstadoLuchador(posicionJugador1, jugador1MiraDerecha, AccionLuchador.Quieto, 0),
-                new EstadoLuchador(posicionJugador2, !jugador1MiraDerecha, AccionLuchador.Quieto, 0));
+                EstadoLuchador.EnReposo(posicionJugador1, jugador1MiraDerecha),
+                EstadoLuchador.EnReposo(posicionJugador2, !jugador1MiraDerecha));
         }
 
         public SumaVerificacion CalcularSumaVerificacion() =>

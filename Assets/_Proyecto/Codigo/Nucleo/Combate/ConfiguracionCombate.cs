@@ -13,7 +13,7 @@ namespace FgcTag.Nucleo.Combate
 
         public ConfiguracionCombate(ParametrosLuchador jugador1, ParametrosLuchador jugador2, Fijo limiteIzquierdo, Fijo limiteDerecho)
         {
-            var anchoMinimo = (jugador1.MedioAnchoEmpuje + jugador2.MedioAnchoEmpuje) * 2;
+            var anchoMinimo = (jugador1.MedioAnchoMaximo + jugador2.MedioAnchoMaximo) * 2;
 
             if (limiteDerecho - limiteIzquierdo < anchoMinimo)
             {

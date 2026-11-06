@@ -4,14 +4,13 @@ using UnityEngine;
 namespace FgcTag.Presentacion
 {
     /// <summary>
-    /// Representación provisional de la fase 1: cada luchador es una caja del tamaño de su caja
-    /// de empuje, con una «nariz» que indica hacia dónde mira. Solo lee el estado; nunca lo modifica.
+    /// Representación provisional de la fase 1: cada luchador es su caja de empuje real (la misma
+    /// que usa la simulación), con una «nariz» que indica hacia dónde mira. Solo lee el estado.
     /// </summary>
     public sealed class VistaCajasPrueba
     {
         private const float GrosorProfundidad = 0.6f;
         private const float TamanoNariz = 0.18f;
-        private const float FactorAlturaAgachado = 0.55f;
 
         private static readonly Color ColorJugador1 = new Color(0.25f, 0.55f, 0.95f);
         private static readonly Color ColorJugador2 = new Color(0.95f, 0.35f, 0.3f);
@@ -66,16 +65,15 @@ namespace FgcTag.Presentacion
 
         private sealed class LuchadorVisual
         {
+            private readonly ParametrosLuchador _parametros;
             private readonly Transform _raiz;
             private readonly Transform _cuerpo;
+            private readonly Transform _nariz;
             private readonly Material _material;
-            private readonly float _ancho;
-            private readonly float _alto;
 
             public LuchadorVisual(string nombre, Transform padre, in ParametrosLuchador parametros, Color color)
             {
-                _ancho = parametros.MedioAnchoEmpuje.AFlotante() * 2f;
-                _alto = parametros.MedioAltoEmpuje.AFlotante() * 2f;
+                _parametros = parametros;
 
                 _raiz = new GameObject(nombre).transform;
                 _raiz.SetParent(padre, false);
@@ -85,33 +83,50 @@ namespace FgcTag.Presentacion
                 _cuerpo = cuerpo.transform;
                 _cuerpo.SetParent(_raiz, false);
 
-                var renderer = cuerpo.GetComponent<Renderer>();
-                _material = renderer.material;
+                _material = cuerpo.GetComponent<Renderer>().material;
                 _material.color = color;
 
                 var nariz = GameObject.CreatePrimitive(PrimitiveType.Cube);
                 nariz.name = "Nariz";
-                nariz.transform.SetParent(_raiz, false);
-                nariz.transform.localPosition = new Vector3(_ancho / 2f + TamanoNariz / 2f, _alto * 0.8f, 0f);
-                nariz.transform.localScale = Vector3.one * TamanoNariz;
+                _nariz = nariz.transform;
+                _nariz.SetParent(_raiz, false);
+                _nariz.localScale = Vector3.one * TamanoNariz;
                 nariz.GetComponent<Renderer>().sharedMaterial = _material;
-
-                AjustarCuerpo(_alto);
             }
 
             public void Mostrar(in EstadoLuchador estado)
             {
+                var caja = _parametros.CajaEmpuje(estado);
+                var ancho = caja.MedioAncho.AFlotante() * 2f;
+                var alto = caja.MedioAlto.AFlotante() * 2f * FactorPose(estado.Accion);
+
                 _raiz.localPosition = new Vector3(estado.Posicion.X.AFlotante(), estado.Posicion.Y.AFlotante(), 0f);
                 _raiz.localScale = new Vector3(estado.MiraDerecha ? 1f : -1f, 1f, 1f);
-                AjustarCuerpo(estado.Accion == AccionLuchador.Agachado ? _alto * FactorAlturaAgachado : _alto);
+
+                _cuerpo.localPosition = new Vector3(0f, alto / 2f, 0f);
+                _cuerpo.localScale = new Vector3(ancho, alto, GrosorProfundidad);
+                _nariz.localPosition = new Vector3(ancho / 2f + TamanoNariz / 2f, alto * 0.8f, 0f);
             }
 
             public void DestruirMaterial() => Object.Destroy(_material);
 
-            private void AjustarCuerpo(float altura)
+            /// <summary>
+            /// Pista visual de la pose (agacharse, cargar el salto, amortiguar la caída). Solo
+            /// cambia el dibujo; la caja de la simulación no se modifica.
+            /// </summary>
+            private static float FactorPose(AccionLuchador accion)
             {
-                _cuerpo.localPosition = new Vector3(0f, altura / 2f, 0f);
-                _cuerpo.localScale = new Vector3(_ancho, altura, GrosorProfundidad);
+                switch (accion)
+                {
+                    case AccionLuchador.Agachado:
+                        return 0.55f;
+                    case AccionLuchador.PreSalto:
+                        return 0.85f;
+                    case AccionLuchador.Aterrizaje:
+                        return 0.8f;
+                    default:
+                        return 1f;
+                }
             }
         }
     }

@@ -75,7 +75,7 @@ namespace FgcTag.Arranque
                 return;
             }
 
-            GUILayout.BeginArea(new Rect(12, 12, 520, 120), GUI.skin.box);
+            GUILayout.BeginArea(new Rect(12, 12, 720, 90), GUI.skin.box);
             GUILayout.Label($"Frame {_estado.Frame}   Suma {_estado.CalcularSumaVerificacion()}");
             GUILayout.Label(DescribirLuchador("J1", _estado.Luchador1));
             GUILayout.Label(DescribirLuchador("J2", _estado.Luchador2));
@@ -83,7 +83,7 @@ namespace FgcTag.Arranque
         }
 
         private static string DescribirLuchador(string etiqueta, in EstadoLuchador luchador) =>
-            $"{etiqueta}: x {luchador.Posicion.X}   {luchador.Accion} ({luchador.FramesEnAccion} f)   mira {(luchador.MiraDerecha ? "derecha" : "izquierda")}";
+            $"{etiqueta}: pos {luchador.Posicion}   vel {luchador.Velocidad}   {luchador.Accion} ({luchador.FramesEnAccion} f)   mira {(luchador.MiraDerecha ? "derecha" : "izquierda")}";
 
         private static void ColocarCamara()
         {

@@ -1,38 +1,12 @@
 using FgcTag.Nucleo.Combate;
 using FgcTag.Nucleo.Matematica;
 using NUnit.Framework;
+using static FgcTag.Pruebas.Nucleo.EscenarioPrueba;
 
 namespace FgcTag.Pruebas.Nucleo
 {
     public class PruebasSimuladorCombate
     {
-        private static readonly ParametrosLuchador Parametros = new ParametrosLuchador(
-            velocidadAdelante: Fijo.DesdeFraccion(1, 4),
-            velocidadAtras: Fijo.DesdeFraccion(1, 8),
-            medioAnchoEmpuje: Fijo.Medio,
-            medioAltoEmpuje: Fijo.Uno);
-
-        private static readonly ConfiguracionCombate Configuracion = new ConfiguracionCombate(
-            Parametros,
-            Parametros,
-            Fijo.DesdeEntero(-10),
-            Fijo.DesdeEntero(10));
-
-        private static EstadoPartida Inicial(int x1, int x2) =>
-            EstadoPartida.Crear(VectorFijo.DesdeEnteros(x1, 0), VectorFijo.DesdeEnteros(x2, 0));
-
-        private static EstadoPartida Simular(EstadoPartida estado, BotonesEntrada jugador1, BotonesEntrada jugador2, int frames)
-        {
-            var entradas = new EntradasFrame(jugador1, jugador2);
-
-            for (var i = 0; i < frames; i++)
-            {
-                estado = SimuladorCombate.Avanzar(estado, entradas, Configuracion);
-            }
-
-            return estado;
-        }
-
         /// <summary>Entradas pseudoaleatorias reproducibles (generador congruencial lineal).</summary>
         private static EntradasFrame EntradasPseudoaleatorias(ref uint semilla)
         {
@@ -140,8 +114,8 @@ namespace FgcTag.Pruebas.Nucleo
             {
                 estado = Simular(estado, BotonesEntrada.Derecha, BotonesEntrada.Ninguno, 1);
 
-                var caja1 = Parametros.CajaEmpuje(estado.Luchador1.Posicion);
-                var caja2 = Parametros.CajaEmpuje(estado.Luchador2.Posicion);
+                var caja1 = Parametros.CajaEmpuje(estado.Luchador1);
+                var caja2 = Parametros.CajaEmpuje(estado.Luchador2);
                 Assert.IsFalse(caja1.Intersecta(caja2), $"Solapamiento en el frame {estado.Frame}");
             }
 
@@ -162,8 +136,8 @@ namespace FgcTag.Pruebas.Nucleo
         {
             var malOrientado = new EstadoPartida(
                 0,
-                new EstadoLuchador(VectorFijo.DesdeEnteros(-2, 0), false, AccionLuchador.Quieto, 0),
-                new EstadoLuchador(VectorFijo.DesdeEnteros(2, 0), true, AccionLuchador.Quieto, 0));
+                EstadoLuchador.EnReposo(VectorFijo.DesdeEnteros(-2, 0), false),
+                EstadoLuchador.EnReposo(VectorFijo.DesdeEnteros(2, 0), true));
 
             var estado = SimuladorCombate.Avanzar(malOrientado, EntradasFrame.Vacias, Configuracion);
 
@@ -215,7 +189,7 @@ namespace FgcTag.Pruebas.Nucleo
             var semilla = 1530u;
             var estado = SimularPseudoaleatorio(Inicial(-2, 2), ref semilla, 600);
 
-            Assert.AreEqual("D35D5C3390BA2F56", estado.CalcularSumaVerificacion().ToString());
+            Assert.AreEqual("7CA96CC36311B220", estado.CalcularSumaVerificacion().ToString());
         }
     }
 }

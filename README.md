@@ -34,6 +34,7 @@ Si Unity Hub no acepta la carpeta, crea un proyecto nuevo con la plantilla **Uni
 | Acción | Jugador 1 (teclado) | Jugador 2 (teclado) | Mando |
 | --- | --- | --- | --- |
 | Moverse | W A S D | Flechas | Cruceta o palanca izquierda |
+| Saltar (neutral, adelante, atrás) | W, W + D, W + A | Flecha arriba (+ dirección) | Arriba (+ dirección) |
 | Agacharse | S | Flecha abajo | Abajo |
 | Débil / Medio / Fuerte | U / I / O | Num 4 / 5 / 6 | Cuadrado-X / Triángulo-Y / Círculo-B |
 | Especial | J | Num 1 | Equis-A |
