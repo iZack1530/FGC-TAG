@@ -1,5 +1,6 @@
 using FgcTag.Nucleo.Colisiones;
 using FgcTag.Nucleo.Combate;
+using FgcTag.Nucleo.Equipos;
 using FgcTag.Nucleo.Matematica;
 
 namespace FgcTag.Pruebas.Nucleo
@@ -198,8 +199,11 @@ namespace FgcTag.Pruebas.Nucleo
         /// <summary>99 segundos.</summary>
         public const int FramesPorRonda = 5940;
 
-        public static readonly ParametrosLuchador Parametros = new ParametrosLuchador(
-            vidaMaxima: VidaMaxima,
+        public static readonly ParametrosLuchador Parametros = CrearParametros(VidaMaxima);
+
+        /// <summary>El luchador de referencia con otra vida máxima; así se distingue a cada miembro de un equipo.</summary>
+        public static ParametrosLuchador CrearParametros(int vidaMaxima) => new ParametrosLuchador(
+            vidaMaxima: vidaMaxima,
             velocidadAdelante: Fijo.DesdeFraccion(1, 4),
             velocidadAtras: Fijo.DesdeFraccion(1, 8),
             medioAnchoEmpuje: Fijo.Medio,
@@ -243,7 +247,60 @@ namespace FgcTag.Pruebas.Nucleo
             framesBuferEntradas: FramesBufer,
             danio: Danio,
             juggle: Juggle,
-            framesPorRonda: framesPorRonda);
+            framesPorRonda: framesPorRonda,
+            framesEntrada: FramesEntrada);
+
+        /// <summary>Frames que tarda en poder actuar quien entra a la pantalla.</summary>
+        public const int FramesEntrada = 10;
+
+        public const int FramesEsperaCambio = 60;
+        public const int FramesPausaNocaut = 30;
+
+        /// <summary>Vida máxima de los tres miembros de cada equipo de prueba.</summary>
+        public const int VidaSegundo = 1200;
+        public const int VidaTercero = 1400;
+
+        public static readonly ParametrosEquipo EquipoDePrueba = new ParametrosEquipo(
+            CrearParametros(VidaMaxima),
+            CrearParametros(VidaSegundo),
+            CrearParametros(VidaTercero));
+
+        public static readonly ConfiguracionEquipos Equipos = EquiposConReloj(FramesPorRonda);
+
+        public static ConfiguracionEquipos EquiposConReloj(int framesPorRonda) => new ConfiguracionEquipos(
+            EquipoDePrueba,
+            EquipoDePrueba,
+            ConfiguracionConReloj(framesPorRonda),
+            framesEsperaCambio: FramesEsperaCambio,
+            framesPausaNocaut: FramesPausaNocaut,
+            distanciaEntrada: Fijo.DesdeEntero(4));
+
+        public static EstadoCombateEquipos InicialPorEquipos(int x1, int x2) =>
+            EstadoCombateEquipos.Crear(VectorFijo.DesdeEnteros(x1, 0), VectorFijo.DesdeEnteros(x2, 0), Equipos);
+
+        public static EstadoCombateEquipos SimularEquipos(EstadoCombateEquipos estado, BotonesEntrada jugador1, BotonesEntrada jugador2, int frames)
+        {
+            var entradas = new EntradasFrame(jugador1, jugador2);
+
+            for (var i = 0; i < frames; i++)
+            {
+                estado = SimuladorEquipos.Avanzar(estado, entradas, Equipos);
+            }
+
+            return estado;
+        }
+
+        /// <summary>Copia del estado con la vida de los luchadores en pantalla cambiada.</summary>
+        public static EstadoCombateEquipos ConVidasActivas(EstadoCombateEquipos estado, int vida1, int vida2) =>
+            new EstadoCombateEquipos(ConVidas(estado.Duelo, vida1, vida2), estado.Equipo1, estado.Equipo2, estado.Resultado, estado.FramesDesdeNocaut);
+
+        /// <summary>Copia del estado con otro equipo 2: sirve para dejar compañeros sin vida.</summary>
+        public static EstadoCombateEquipos ConEquipo2(EstadoCombateEquipos estado, EstadoEquipo equipo2) =>
+            new EstadoCombateEquipos(estado.Duelo, estado.Equipo1, equipo2, estado.Resultado, estado.FramesDesdeNocaut);
+
+        /// <summary>Copia del estado con otro equipo 1.</summary>
+        public static EstadoCombateEquipos ConEquipo1(EstadoCombateEquipos estado, EstadoEquipo equipo1) =>
+            new EstadoCombateEquipos(estado.Duelo, equipo1, estado.Equipo2, estado.Resultado, estado.FramesDesdeNocaut);
 
         public static EstadoPartida Inicial(int x1, int x2) =>
             EstadoPartida.Crear(VectorFijo.DesdeEnteros(x1, 0), VectorFijo.DesdeEnteros(x2, 0), Configuracion);

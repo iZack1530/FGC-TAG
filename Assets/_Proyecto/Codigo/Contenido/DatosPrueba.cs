@@ -1,5 +1,6 @@
 using FgcTag.Nucleo.Colisiones;
 using FgcTag.Nucleo.Combate;
+using FgcTag.Nucleo.Equipos;
 using FgcTag.Nucleo.Matematica;
 
 namespace FgcTag.Contenido
@@ -279,11 +280,28 @@ namespace FgcTag.Contenido
             framesBuferEntradas: 5,
             danio: DanioCajasGrises,
             juggle: JuggleCajasGrises,
-            framesPorRonda: FramesPorRonda);
+            framesPorRonda: FramesPorRonda,
+            framesEntrada: 20);
 
-        public static readonly EstadoPartida EstadoInicial = EstadoPartida.Crear(
+        /// <summary>Por ahora los tres miembros de cada equipo son el mismo luchador de cajas grises.</summary>
+        public static readonly ParametrosEquipo EquipoCajasGrises = new ParametrosEquipo(LuchadorCajaGris, LuchadorCajaGris, LuchadorCajaGris);
+
+        /// <summary>
+        /// Combate 3 contra 3: quien entra tarda 20 frames en poder actuar, cada equipo espera
+        /// 2 segundos entre cambios y, tras un K.O., el siguiente luchador entra 1 segundo después
+        /// a 4 m del rival.
+        /// </summary>
+        public static readonly ConfiguracionEquipos EquiposCajasGrises = new ConfiguracionEquipos(
+            EquipoCajasGrises,
+            EquipoCajasGrises,
+            ConfiguracionCajasGrises,
+            framesEsperaCambio: 120,
+            framesPausaNocaut: 60,
+            distanciaEntrada: Fijo.DesdeEntero(4));
+
+        public static readonly EstadoCombateEquipos CombateInicial = EstadoCombateEquipos.Crear(
             VectorFijo.DesdeEnteros(-2, 0),
             VectorFijo.DesdeEnteros(2, 0),
-            ConfiguracionCajasGrises);
+            EquiposCajasGrises);
     }
 }

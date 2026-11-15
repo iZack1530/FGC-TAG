@@ -8,7 +8,7 @@ namespace FgcTag.Entrada
     /// </summary>
     /// <remarks>
     /// F1 pausa o reanuda la simulación; F2, en pausa, avanza exactamente un frame; F3 empieza
-    /// una ronda nueva.
+    /// un combate nuevo.
     /// </remarks>
     public static class TeclasDepuracion
     {

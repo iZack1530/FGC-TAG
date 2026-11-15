@@ -14,8 +14,20 @@ namespace FgcTag.Presentacion
         private const float GrosorProfundidad = 0.6f;
         private const float TamanoNariz = 0.18f;
 
-        private static readonly Color ColorJugador1 = new Color(0.25f, 0.55f, 0.95f);
-        private static readonly Color ColorJugador2 = new Color(0.95f, 0.35f, 0.3f);
+        /// <summary>Un tono por miembro del equipo, para ver quién está en pantalla: azules el jugador 1 y rojizos el jugador 2.</summary>
+        private static readonly Color[] ColoresJugador1 =
+        {
+            new Color(0.25f, 0.55f, 0.95f),
+            new Color(0.2f, 0.8f, 0.85f),
+            new Color(0.45f, 0.4f, 0.95f),
+        };
+
+        private static readonly Color[] ColoresJugador2 =
+        {
+            new Color(0.95f, 0.35f, 0.3f),
+            new Color(0.95f, 0.6f, 0.2f),
+            new Color(0.9f, 0.3f, 0.65f),
+        };
         private static readonly Color ColorPiso = new Color(0.35f, 0.35f, 0.38f);
         private static readonly Color ColorCajaGolpe = new Color(1f, 0.15f, 0.1f);
         private static readonly Color ColorImpactoAtacante = new Color(1f, 1f, 1f);
@@ -32,14 +44,17 @@ namespace FgcTag.Presentacion
             _raiz.transform.SetParent(padre, false);
 
             _materialPiso = CrearPiso(_raiz.transform, configuracion);
-            _luchador1 = new LuchadorVisual("Jugador1", _raiz.transform, configuracion.Jugador1, ColorJugador1);
-            _luchador2 = new LuchadorVisual("Jugador2", _raiz.transform, configuracion.Jugador2, ColorJugador2);
+            _luchador1 = new LuchadorVisual("Jugador1", _raiz.transform, configuracion.Jugador1, ColoresJugador1[0]);
+            _luchador2 = new LuchadorVisual("Jugador2", _raiz.transform, configuracion.Jugador2, ColoresJugador2[0]);
         }
 
-        public void Mostrar(in EstadoPartida estado)
+        /// <param name="reglas">Configuración del duelo entre los dos luchadores que están en pantalla.</param>
+        /// <param name="miembro1">Posición en su equipo, de 0 a 2, del luchador del jugador 1; decide su color.</param>
+        /// <param name="miembro2">Lo mismo para el jugador 2.</param>
+        public void Mostrar(in EstadoPartida estado, in ConfiguracionCombate reglas, int miembro1, int miembro2)
         {
-            _luchador1.Mostrar(estado.Luchador1);
-            _luchador2.Mostrar(estado.Luchador2);
+            _luchador1.Mostrar(estado.Luchador1, reglas.Jugador1, ColoresJugador1[miembro1]);
+            _luchador2.Mostrar(estado.Luchador2, reglas.Jugador2, ColoresJugador2[miembro2]);
         }
 
         public void Destruir()
@@ -70,14 +85,14 @@ namespace FgcTag.Presentacion
 
         private sealed class LuchadorVisual
         {
-            private readonly ParametrosLuchador _parametros;
+            private ParametrosLuchador _parametros;
             private readonly Transform _raiz;
             private readonly Transform _cuerpo;
             private readonly Transform _nariz;
             private readonly GameObject _cajaGolpe;
             private readonly Material _material;
             private readonly Material _materialCajaGolpe;
-            private readonly Color _color;
+            private Color _color;
 
             public LuchadorVisual(string nombre, Transform padre, in ParametrosLuchador parametros, Color color)
             {
@@ -110,8 +125,12 @@ namespace FgcTag.Presentacion
                 _cajaGolpe.SetActive(false);
             }
 
-            public void Mostrar(in EstadoLuchador estado)
+            /// <summary>Los parámetros y el color llegan en cada llamada porque el luchador en pantalla cambia con el tag.</summary>
+            public void Mostrar(in EstadoLuchador estado, in ParametrosLuchador parametros, Color color)
             {
+                _parametros = parametros;
+                _color = color;
+
                 var caja = _parametros.CajaEmpuje(estado);
                 var ancho = caja.MedioAncho.AFlotante() * 2f;
                 var alto = caja.MedioAlto.AFlotante() * 2f * FactorPose(estado.Accion);
