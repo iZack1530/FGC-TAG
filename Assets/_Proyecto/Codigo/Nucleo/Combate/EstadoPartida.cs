@@ -13,25 +13,38 @@ namespace FgcTag.Nucleo.Combate
         public readonly EstadoLuchador Luchador1;
         public readonly EstadoLuchador Luchador2;
 
-        public EstadoPartida(int frame, EstadoLuchador luchador1, EstadoLuchador luchador2)
+        /// <summary>Frames que le quedan al reloj de la ronda; se detiene cuando la ronda termina.</summary>
+        public readonly int FramesRestantes;
+
+        public readonly ResultadoRonda Resultado;
+
+        public EstadoPartida(int frame, EstadoLuchador luchador1, EstadoLuchador luchador2, int framesRestantes, ResultadoRonda resultado)
         {
             Frame = frame;
             Luchador1 = luchador1;
             Luchador2 = luchador2;
+            FramesRestantes = framesRestantes;
+            Resultado = resultado;
         }
 
-        /// <summary>Estado del frame 0 con ambos luchadores quietos y mirándose.</summary>
-        public static EstadoPartida Crear(VectorFijo posicionJugador1, VectorFijo posicionJugador2)
+        public bool RondaTerminada => Resultado != ResultadoRonda.EnCurso;
+
+        /// <summary>Estado del frame 0: ambos luchadores quietos, mirándose, con la vida llena y el reloj completo.</summary>
+        public static EstadoPartida Crear(VectorFijo posicionJugador1, VectorFijo posicionJugador2, in ConfiguracionCombate configuracion)
         {
             var jugador1MiraDerecha = posicionJugador1.X <= posicionJugador2.X;
 
             return new EstadoPartida(
                 0,
-                EstadoLuchador.EnReposo(posicionJugador1, jugador1MiraDerecha),
-                EstadoLuchador.EnReposo(posicionJugador2, !jugador1MiraDerecha));
+                EstadoLuchador.EnReposo(posicionJugador1, jugador1MiraDerecha, configuracion.Jugador1.VidaMaxima),
+                EstadoLuchador.EnReposo(posicionJugador2, !jugador1MiraDerecha, configuracion.Jugador2.VidaMaxima),
+                configuracion.FramesPorRonda,
+                ResultadoRonda.EnCurso);
         }
 
         public SumaVerificacion CalcularSumaVerificacion() =>
-            Luchador2.AgregarA(Luchador1.AgregarA(SumaVerificacion.Inicial.Agregar(Frame)));
+            Luchador2.AgregarA(Luchador1.AgregarA(SumaVerificacion.Inicial.Agregar(Frame)))
+                .Agregar(FramesRestantes)
+                .Agregar((int)Resultado);
     }
 }

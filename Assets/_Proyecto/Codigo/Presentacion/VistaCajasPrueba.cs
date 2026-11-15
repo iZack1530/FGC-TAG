@@ -176,6 +176,8 @@ namespace FgcTag.Presentacion
                         return 0.85f;
                     case AccionLuchador.Aterrizaje:
                         return 0.8f;
+                    case AccionLuchador.Noqueado:
+                        return 0.25f;
                     default:
                         return 1f;
                 }

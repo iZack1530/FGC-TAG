@@ -31,6 +31,7 @@ namespace FgcTag.Contenido
             hitstun: 14,
             blockstun: 10,
             hitstop: 8,
+            danio: 300,
             retrocesoAlGolpear: Fijo.DesdeFraccion(10, 100),
             retrocesoAlBloquear: Fijo.DesdeFraccion(8, 100),
             cajaGolpe: new CajaColision(
@@ -49,6 +50,7 @@ namespace FgcTag.Contenido
             hitstun: 17,
             blockstun: 13,
             hitstop: 10,
+            danio: 600,
             retrocesoAlGolpear: Fijo.DesdeFraccion(12, 100),
             retrocesoAlBloquear: Fijo.DesdeFraccion(10, 100),
             cajaGolpe: new CajaColision(
@@ -67,6 +69,7 @@ namespace FgcTag.Contenido
             hitstun: 21,
             blockstun: 16,
             hitstop: 12,
+            danio: 900,
             retrocesoAlGolpear: Fijo.DesdeFraccion(15, 100),
             retrocesoAlBloquear: Fijo.DesdeFraccion(12, 100),
             cajaGolpe: new CajaColision(
@@ -80,7 +83,14 @@ namespace FgcTag.Contenido
             medioAltoAgachado: Fijo.DesdeFraccion(5, 10),
             medioAltoAire: Fijo.DesdeFraccion(5, 10));
 
+        /// <summary>Cada golpe del combo hace 10 puntos porcentuales menos de daño, con un mínimo del 30%.</summary>
+        public static readonly ReglasDanio DanioCajasGrises = new ReglasDanio(reduccionPorGolpe: 10, porcentajeMinimo: 30);
+
+        /// <summary>99 segundos de reloj.</summary>
+        public const int FramesPorRonda = 99 * 60;
+
         public static readonly ParametrosLuchador LuchadorCajaGris = new ParametrosLuchador(
+            vidaMaxima: 10000,
             velocidadAdelante: Fijo.DesdeFraccion(6, 100),
             velocidadAtras: Fijo.DesdeFraccion(45, 1000),
             medioAnchoEmpuje: Fijo.DesdeFraccion(4, 10),
@@ -99,10 +109,13 @@ namespace FgcTag.Contenido
             Fijo.DesdeEntero(-7),
             Fijo.DesdeEntero(7),
             friccionRetroceso: Fijo.DesdeFraccion(1, 100),
-            framesBuferEntradas: 5);
+            framesBuferEntradas: 5,
+            danio: DanioCajasGrises,
+            framesPorRonda: FramesPorRonda);
 
         public static readonly EstadoPartida EstadoInicial = EstadoPartida.Crear(
             VectorFijo.DesdeEnteros(-2, 0),
-            VectorFijo.DesdeEnteros(2, 0));
+            VectorFijo.DesdeEnteros(2, 0),
+            ConfiguracionCajasGrises);
     }
 }

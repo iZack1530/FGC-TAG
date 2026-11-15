@@ -24,6 +24,9 @@ namespace FgcTag.Nucleo.Combate
 
         public readonly Fijo MedioAltoEmpujeAire;
 
+        /// <summary>Vida con la que el luchador empieza la ronda.</summary>
+        public readonly int VidaMaxima;
+
         public readonly ParametrosSalto Salto;
         public readonly MedidasCajaDanio MedidasDanio;
 
@@ -37,6 +40,7 @@ namespace FgcTag.Nucleo.Combate
         public readonly DatosMovimiento GolpeFuerte;
 
         public ParametrosLuchador(
+            int vidaMaxima,
             Fijo velocidadAdelante,
             Fijo velocidadAtras,
             Fijo medioAnchoEmpuje,
@@ -60,6 +64,12 @@ namespace FgcTag.Nucleo.Combate
                 throw new ArgumentOutOfRangeException(nameof(medioAnchoEmpuje), "Las cajas de empuje deben tener tamaño positivo.");
             }
 
+            if (vidaMaxima < 1)
+            {
+                throw new ArgumentOutOfRangeException(nameof(vidaMaxima), "La vida máxima debe ser positiva.");
+            }
+
+            VidaMaxima = vidaMaxima;
             VelocidadAdelante = velocidadAdelante;
             VelocidadAtras = velocidadAtras;
             MedioAnchoEmpuje = medioAnchoEmpuje;

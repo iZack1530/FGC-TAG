@@ -3,7 +3,7 @@ using FgcTag.Nucleo.Matematica;
 
 namespace FgcTag.Nucleo.Combate
 {
-    /// <summary>Reglas fijas de una partida: luchadores en pantalla, paredes del escenario y fricción.</summary>
+    /// <summary>Reglas fijas de una partida: luchadores en pantalla, escenario, daño y duración de la ronda.</summary>
     public readonly struct ConfiguracionCombate
     {
         public readonly ParametrosLuchador Jugador1;
@@ -20,13 +20,20 @@ namespace FgcTag.Nucleo.Combate
         /// </summary>
         public readonly int FramesBuferEntradas;
 
+        public readonly ReglasDanio Danio;
+
+        /// <summary>Duración del reloj de la ronda, en frames de 60 Hz.</summary>
+        public readonly int FramesPorRonda;
+
         public ConfiguracionCombate(
             ParametrosLuchador jugador1,
             ParametrosLuchador jugador2,
             Fijo limiteIzquierdo,
             Fijo limiteDerecho,
             Fijo friccionRetroceso,
-            int framesBuferEntradas)
+            int framesBuferEntradas,
+            ReglasDanio danio,
+            int framesPorRonda)
         {
             var anchoMinimo = (jugador1.MedioAnchoMaximo + jugador2.MedioAnchoMaximo) * 2;
 
@@ -45,12 +52,19 @@ namespace FgcTag.Nucleo.Combate
                 throw new ArgumentOutOfRangeException(nameof(framesBuferEntradas), "El búfer de entradas dura al menos 1 frame.");
             }
 
+            if (framesPorRonda < 1)
+            {
+                throw new ArgumentOutOfRangeException(nameof(framesPorRonda), "La ronda dura al menos 1 frame.");
+            }
+
             Jugador1 = jugador1;
             Jugador2 = jugador2;
             LimiteIzquierdo = limiteIzquierdo;
             LimiteDerecho = limiteDerecho;
             FriccionRetroceso = friccionRetroceso;
             FramesBuferEntradas = framesBuferEntradas;
+            Danio = danio;
+            FramesPorRonda = framesPorRonda;
         }
     }
 }
