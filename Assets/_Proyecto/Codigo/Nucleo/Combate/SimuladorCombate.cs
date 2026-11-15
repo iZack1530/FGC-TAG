@@ -11,6 +11,7 @@ namespace FgcTag.Nucleo.Combate
     /// 2) se aplican las paredes; 3) se separan las cajas de empuje; 4) se resuelven los golpes
     /// (caja de golpe contra caja de daño); 5) los luchadores que pueden girar se orientan hacia
     /// el rival. Un luchador en hitstop no actúa: solo descuenta un frame de congelamiento.
+    /// Antes de actuar, cada ataque recién pulsado se guarda en el búfer de entradas.
     /// </remarks>
     public static class SimuladorCombate
     {
@@ -39,12 +40,51 @@ namespace FgcTag.Nucleo.Combate
             in ParametrosLuchador parametros,
             in ConfiguracionCombate configuracion)
         {
-            var avanzado = luchador.EnHitstop
-                ? luchador.ConHitstop(luchador.FramesHitstop - 1)
-                : Actuar(luchador, botones, parametros, configuracion);
+            var conBufer = ActualizarBufer(luchador, botones, configuracion.FramesBuferEntradas);
+
+            var avanzado = conBufer.EnHitstop
+                ? conBufer.ConHitstop(conBufer.FramesHitstop - 1)
+                : Actuar(conBufer, botones, parametros, configuracion);
 
             return avanzado.ConBotonesAnteriores(botones);
         }
+
+        /// <summary>
+        /// Una pulsación nueva reemplaza lo guardado y dura los frames configurados, contando este.
+        /// Si no hay pulsación, lo guardado envejece un frame, salvo durante el hitstop.
+        /// </summary>
+        private static EstadoLuchador ActualizarBufer(in EstadoLuchador luchador, BotonesEntrada botones, int framesBufer)
+        {
+            var pulsado = LecturaAtaques.RecienPulsado(botones, luchador.BotonesAnteriores);
+
+            if (pulsado != TipoAtaque.Ninguno)
+            {
+                return luchador.ConBufer(pulsado, framesBufer);
+            }
+
+            if (luchador.EnHitstop || luchador.FramesBufer <= 0)
+            {
+                return luchador;
+            }
+
+            return luchador.FramesBufer == 1
+                ? luchador.ConBufer(TipoAtaque.Ninguno, 0)
+                : luchador.ConBufer(luchador.AtaqueEnBufer, luchador.FramesBufer - 1);
+        }
+
+        private static EstadoLuchador IniciarAtaque(in EstadoLuchador luchador, TipoAtaque ataque) =>
+            luchador
+                .ConAccionNueva(AccionLuchador.Atacando)
+                .ConAtaque(ataque)
+                .ConGolpeConectado(false)
+                .ConBufer(TipoAtaque.Ninguno, 0);
+
+        /// <summary>
+        /// Cancelación: un ataque que ya conectó (golpeado o bloqueado) se interrumpe para lanzar
+        /// otro más fuerte guardado en el búfer. Un ataque que falla no se puede cancelar.
+        /// </summary>
+        private static bool PuedeCancelar(in EstadoLuchador luchador) =>
+            luchador.GolpeConectado && luchador.TieneAtaqueEnBufer && luchador.AtaqueEnBufer > luchador.Ataque;
 
         private static EstadoLuchador Actuar(
             in EstadoLuchador luchador,
@@ -55,14 +95,19 @@ namespace FgcTag.Nucleo.Combate
             switch (luchador.Accion)
             {
                 case AccionLuchador.Atacando:
-                    return luchador.FramesEnAccion + 1 >= parametros.GolpeDebil.DuracionTotal
-                        ? ControlarEnTierra(luchador.ConGolpeConectado(false), botones, parametros)
+                    if (PuedeCancelar(luchador))
+                    {
+                        return IniciarAtaque(luchador, luchador.AtaqueEnBufer);
+                    }
+
+                    return luchador.FramesEnAccion + 1 >= parametros.Movimiento(luchador.Ataque).DuracionTotal
+                        ? ControlarEnTierra(luchador.ConGolpeConectado(false).ConAtaque(TipoAtaque.Ninguno), botones, parametros)
                         : luchador.ConAccion(AccionLuchador.Atacando);
 
                 case AccionLuchador.Hitstun:
                 case AccionLuchador.Blockstun:
                     return luchador.FramesAturdimiento <= 0
-                        ? ControlarEnTierra(luchador.ConVelocidad(VectorFijo.Cero), botones, parametros)
+                        ? ControlarEnTierra(luchador.ConVelocidad(VectorFijo.Cero).ConGolpesEnCombo(0), botones, parametros)
                         : Retroceder(luchador, configuracion.FriccionRetroceso);
 
                 case AccionLuchador.EnAire:
@@ -85,9 +130,9 @@ namespace FgcTag.Nucleo.Combate
 
         private static EstadoLuchador ControlarEnTierra(in EstadoLuchador luchador, BotonesEntrada botones, in ParametrosLuchador parametros)
         {
-            if (AcabaDePulsar(luchador, botones, BotonesEntrada.Debil))
+            if (luchador.TieneAtaqueEnBufer)
             {
-                return luchador.ConAccionNueva(AccionLuchador.Atacando).ConGolpeConectado(false);
+                return IniciarAtaque(luchador, luchador.AtaqueEnBufer);
             }
 
             var vertical = InterpretacionEntradas.DireccionVertical(botones);
@@ -117,10 +162,6 @@ namespace FgcTag.Nucleo.Combate
                 .ConAccion(accion)
                 .ConX(luchador.Posicion.X + velocidad * direccion);
         }
-
-        /// <summary>Un ataque sale al pulsar el botón, no al mantenerlo.</summary>
-        private static bool AcabaDePulsar(in EstadoLuchador luchador, BotonesEntrada botones, BotonesEntrada boton) =>
-            InterpretacionEntradas.Tiene(botones, boton) && !InterpretacionEntradas.Tiene(luchador.BotonesAnteriores, boton);
 
         /// <summary>Un frame de aturdimiento: el luchador se desliza con su velocidad de retroceso y la fricción la frena.</summary>
         private static EstadoLuchador Retroceder(in EstadoLuchador luchador, Fijo friccion)
@@ -250,12 +291,12 @@ namespace FgcTag.Nucleo.Combate
             var golpea2 = Conecta(luchador2, configuracion.Jugador2, luchador1, configuracion.Jugador1);
 
             var resultado1 = golpea2
-                ? RecibirGolpe(luchador1, luchador2, entradas.Jugador1, configuracion.Jugador2.GolpeDebil)
-                : golpea1 ? MarcarGolpeConectado(luchador1, configuracion.Jugador1.GolpeDebil) : luchador1;
+                ? RecibirGolpe(luchador1, luchador2, entradas.Jugador1, configuracion.Jugador2.Movimiento(luchador2.Ataque))
+                : golpea1 ? MarcarGolpeConectado(luchador1, configuracion.Jugador1.Movimiento(luchador1.Ataque)) : luchador1;
 
             var resultado2 = golpea1
-                ? RecibirGolpe(luchador2, luchador1, entradas.Jugador2, configuracion.Jugador1.GolpeDebil)
-                : golpea2 ? MarcarGolpeConectado(luchador2, configuracion.Jugador2.GolpeDebil) : luchador2;
+                ? RecibirGolpe(luchador2, luchador1, entradas.Jugador2, configuracion.Jugador1.Movimiento(luchador1.Ataque))
+                : golpea2 ? MarcarGolpeConectado(luchador2, configuracion.Jugador2.Movimiento(luchador2.Ataque)) : luchador2;
 
             return (resultado1, resultado2);
         }
@@ -294,7 +335,7 @@ namespace FgcTag.Nucleo.Combate
                 ? (defensor.Posicion.X > atacante.Posicion.X ? 1 : -1)
                 : atacante.SentidoAdelante;
 
-            var congelado = defensor.ConHitstop(movimiento.Hitstop).ConGolpeConectado(false);
+            var congelado = defensor.ConHitstop(movimiento.Hitstop).ConGolpeConectado(false).ConAtaque(TipoAtaque.Ninguno);
 
             if (defensor.Accion == AccionLuchador.EnAire)
             {
@@ -308,7 +349,10 @@ namespace FgcTag.Nucleo.Combate
 
             var retroceso = bloquea ? movimiento.RetrocesoAlBloquear : movimiento.RetrocesoAlGolpear;
 
+            var golpesEnCombo = bloquea ? 0 : (defensor.Accion == AccionLuchador.Hitstun ? defensor.GolpesEnCombo + 1 : 1);
+
             return congelado
+                .ConGolpesEnCombo(golpesEnCombo)
                 .ConAccionNueva(bloquea ? AccionLuchador.Blockstun : AccionLuchador.Hitstun)
                 .ConAturdimiento(bloquea ? movimiento.Blockstun : movimiento.Hitstun)
                 .ConVelocidad(new VectorFijo(retroceso * sentidoRetroceso, Fijo.Cero));
