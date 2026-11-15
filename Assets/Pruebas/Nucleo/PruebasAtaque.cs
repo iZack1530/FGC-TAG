@@ -240,20 +240,16 @@ namespace FgcTag.Pruebas.Nucleo
         }
 
         [Test]
-        public void UnGolpeEnElAireEmpujaSinAturdirYElRivalAterriza()
+        public void UnGolpeAUnRivalQueSaltaLoDejaGolpeadoEnElAire()
         {
             var estado = Simular(Inicial(0, 1), BotonesEntrada.Debil, BotonesEntrada.Arriba, 1);
             estado = Simular(estado, BotonesEntrada.Ninguno, BotonesEntrada.Arriba, FrameDeImpacto - 1);
 
-            Assert.AreEqual(AccionLuchador.EnAire, estado.Luchador2.Accion);
+            Assert.AreEqual(AccionLuchador.GolpeadoEnAire, estado.Luchador2.Accion);
             Assert.AreEqual(8, estado.Luchador2.FramesHitstop);
+            Assert.AreEqual(1, estado.Luchador2.GolpesEnCombo);
             Assert.IsTrue(estado.Luchador2.Velocidad.X > Fijo.Cero);
-            Assert.AreEqual(Fijo.Cero, estado.Luchador2.Velocidad.Y);
-
-            estado = Simular(estado, BotonesEntrada.Ninguno, BotonesEntrada.Ninguno, 30);
-
-            Assert.AreEqual(AccionLuchador.Quieto, estado.Luchador2.Accion);
-            Assert.AreEqual(Fijo.Cero, estado.Luchador2.Posicion.Y);
+            Assert.AreEqual(Juggle.ImpulsoAlGolpear, estado.Luchador2.Velocidad.Y);
         }
 
         [Test]

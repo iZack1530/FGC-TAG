@@ -22,7 +22,7 @@ namespace FgcTag.Contenido
 
         /// <summary>
         /// Golpe débil de pie: golpea en el frame 5, dura 16 frames, +3 al golpear y -1 al
-        /// bloquear. El retroceso aleja al rival unos 0.55 m al golpear y 0.36 m al bloquear.
+        /// bloquear. El retroceso aleja al rival unos 0.21 m al golpear y 0.36 m al bloquear.
         /// </summary>
         public static readonly DatosMovimiento GolpeDebilCajaGris = new DatosMovimiento(
             arranque: 4,
@@ -32,7 +32,7 @@ namespace FgcTag.Contenido
             blockstun: 10,
             hitstop: 8,
             danio: 300,
-            retrocesoAlGolpear: Fijo.DesdeFraccion(10, 100),
+            retrocesoAlGolpear: Fijo.DesdeFraccion(6, 100),
             retrocesoAlBloquear: Fijo.DesdeFraccion(8, 100),
             cajaGolpe: new CajaColision(
                 new VectorFijo(Fijo.DesdeFraccion(75, 100), Fijo.DesdeFraccion(115, 100)),
@@ -51,7 +51,7 @@ namespace FgcTag.Contenido
             blockstun: 13,
             hitstop: 10,
             danio: 600,
-            retrocesoAlGolpear: Fijo.DesdeFraccion(12, 100),
+            retrocesoAlGolpear: Fijo.DesdeFraccion(7, 100),
             retrocesoAlBloquear: Fijo.DesdeFraccion(10, 100),
             cajaGolpe: new CajaColision(
                 new VectorFijo(Fijo.DesdeFraccion(90, 100), Fijo.DesdeFraccion(110, 100)),
@@ -70,12 +70,92 @@ namespace FgcTag.Contenido
             blockstun: 16,
             hitstop: 12,
             danio: 900,
-            retrocesoAlGolpear: Fijo.DesdeFraccion(15, 100),
+            retrocesoAlGolpear: Fijo.DesdeFraccion(8, 100),
             retrocesoAlBloquear: Fijo.DesdeFraccion(12, 100),
             cajaGolpe: new CajaColision(
                 new VectorFijo(Fijo.DesdeFraccion(105, 100), Fijo.DesdeFraccion(100, 100)),
                 Fijo.DesdeFraccion(80, 100),
                 Fijo.DesdeFraccion(30, 100)));
+
+        /// <summary>
+        /// Lanzador (botón Especial): golpea en el frame 9, dura 34 frames y es muy castigable si
+        /// lo bloquean (-10). Si golpea, levanta al rival unos 2.5 m y se cancela con un salto
+        /// manteniendo arriba para seguir el combo en el aire.
+        /// </summary>
+        public static readonly DatosMovimiento LanzadorCajaGris = new DatosMovimiento(
+            arranque: 8,
+            activos: 4,
+            recuperacion: 22,
+            hitstun: 20,
+            blockstun: 15,
+            hitstop: 12,
+            danio: 800,
+            retrocesoAlGolpear: Fijo.DesdeFraccion(2, 100),
+            retrocesoAlBloquear: Fijo.DesdeFraccion(10, 100),
+            cajaGolpe: new CajaColision(
+                new VectorFijo(Fijo.DesdeFraccion(80, 100), Fijo.DesdeFraccion(140, 100)),
+                Fijo.DesdeFraccion(70, 100),
+                Fijo.DesdeFraccion(90, 100)),
+            velocidadLanzamiento: Fijo.DesdeFraccion(26, 100),
+            cancelableConSalto: true);
+
+        /// <summary>Débil aéreo: golpea en el frame 6 y dura 17 frames.</summary>
+        public static readonly DatosMovimiento GolpeDebilAereoCajaGris = new DatosMovimiento(
+            arranque: 5,
+            activos: 4,
+            recuperacion: 8,
+            hitstun: 14,
+            blockstun: 10,
+            hitstop: 8,
+            danio: 300,
+            retrocesoAlGolpear: Fijo.DesdeFraccion(3, 100),
+            retrocesoAlBloquear: Fijo.DesdeFraccion(6, 100),
+            cajaGolpe: new CajaColision(
+                new VectorFijo(Fijo.DesdeFraccion(55, 100), Fijo.DesdeFraccion(60, 100)),
+                Fijo.DesdeFraccion(50, 100),
+                Fijo.DesdeFraccion(55, 100)));
+
+        /// <summary>Medio aéreo: golpea en el frame 8 y dura 23 frames.</summary>
+        public static readonly DatosMovimiento GolpeMedioAereoCajaGris = new DatosMovimiento(
+            arranque: 7,
+            activos: 4,
+            recuperacion: 12,
+            hitstun: 17,
+            blockstun: 13,
+            hitstop: 10,
+            danio: 550,
+            retrocesoAlGolpear: Fijo.DesdeFraccion(3, 100),
+            retrocesoAlBloquear: Fijo.DesdeFraccion(8, 100),
+            cajaGolpe: new CajaColision(
+                new VectorFijo(Fijo.DesdeFraccion(65, 100), Fijo.DesdeFraccion(55, 100)),
+                Fijo.DesdeFraccion(60, 100),
+                Fijo.DesdeFraccion(60, 100)));
+
+        /// <summary>Fuerte aéreo: golpea en el frame 10 y dura 30 frames.</summary>
+        public static readonly DatosMovimiento GolpeFuerteAereoCajaGris = new DatosMovimiento(
+            arranque: 9,
+            activos: 5,
+            recuperacion: 16,
+            hitstun: 21,
+            blockstun: 16,
+            hitstop: 12,
+            danio: 800,
+            retrocesoAlGolpear: Fijo.DesdeFraccion(4, 100),
+            retrocesoAlBloquear: Fijo.DesdeFraccion(10, 100),
+            cajaGolpe: new CajaColision(
+                new VectorFijo(Fijo.DesdeFraccion(75, 100), Fijo.DesdeFraccion(50, 100)),
+                Fijo.DesdeFraccion(70, 100),
+                Fijo.DesdeFraccion(70, 100)));
+
+        /// <summary>
+        /// Un rival golpeado en el aire rebota hacia arriba con 0.10 por frame; cae con gravedad
+        /// 0.012 más 0.0015 por cada golpe del combo, y al tocar el suelo queda 40 frames derribado.
+        /// </summary>
+        public static readonly ReglasJuggle JuggleCajasGrises = new ReglasJuggle(
+            impulsoAlGolpear: Fijo.DesdeFraccion(10, 100),
+            gravedad: Fijo.DesdeFraccion(12, 1000),
+            gravedadExtraPorGolpe: Fijo.DesdeFraccion(15, 10000),
+            framesDerribado: 40);
 
         public static readonly MedidasCajaDanio CajaDanioCajaGris = new MedidasCajaDanio(
             medioAncho: Fijo.DesdeFraccion(4, 10),
@@ -83,8 +163,11 @@ namespace FgcTag.Contenido
             medioAltoAgachado: Fijo.DesdeFraccion(5, 10),
             medioAltoAire: Fijo.DesdeFraccion(5, 10));
 
-        /// <summary>Cada golpe del combo hace 10 puntos porcentuales menos de daño, con un mínimo del 30%.</summary>
-        public static readonly ReglasDanio DanioCajasGrises = new ReglasDanio(reduccionPorGolpe: 10, porcentajeMinimo: 30);
+        /// <summary>
+        /// Cada golpe del combo hace 10 puntos porcentuales menos de daño, con un mínimo del 30%.
+        /// Un golpe bloqueado hace el 10% de su daño base (daño chip) y nunca noquea.
+        /// </summary>
+        public static readonly ReglasDanio DanioCajasGrises = new ReglasDanio(reduccionPorGolpe: 10, porcentajeMinimo: 30, porcentajeAlBloquear: 10);
 
         /// <summary>99 segundos de reloj.</summary>
         public const int FramesPorRonda = 99 * 60;
@@ -99,9 +182,14 @@ namespace FgcTag.Contenido
             medioAltoEmpujeAire: Fijo.DesdeFraccion(5, 10),
             salto: SaltoCajaGris,
             medidasDanio: CajaDanioCajaGris,
-            golpeDebil: GolpeDebilCajaGris,
-            golpeMedio: GolpeMedioCajaGris,
-            golpeFuerte: GolpeFuerteCajaGris);
+            movimientos: new MovimientosLuchador(
+                debil: GolpeDebilCajaGris,
+                medio: GolpeMedioCajaGris,
+                fuerte: GolpeFuerteCajaGris,
+                lanzador: LanzadorCajaGris,
+                debilAereo: GolpeDebilAereoCajaGris,
+                medioAereo: GolpeMedioAereoCajaGris,
+                fuerteAereo: GolpeFuerteAereoCajaGris));
 
         public static readonly ConfiguracionCombate ConfiguracionCajasGrises = new ConfiguracionCombate(
             LuchadorCajaGris,
@@ -111,6 +199,7 @@ namespace FgcTag.Contenido
             friccionRetroceso: Fijo.DesdeFraccion(1, 100),
             framesBuferEntradas: 5,
             danio: DanioCajasGrises,
+            juggle: JuggleCajasGrises,
             framesPorRonda: FramesPorRonda);
 
         public static readonly EstadoPartida EstadoInicial = EstadoPartida.Crear(

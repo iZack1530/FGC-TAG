@@ -11,6 +11,9 @@ namespace FgcTag.Nucleo.Combate
         Debil = 1,
         Medio = 2,
         Fuerte = 3,
+
+        /// <summary>Botón Especial: en tierra es el lanzador universal.</summary>
+        Especial = 4,
     }
 
     public static class LecturaAtaques
@@ -22,6 +25,11 @@ namespace FgcTag.Nucleo.Combate
         public static TipoAtaque RecienPulsado(BotonesEntrada botones, BotonesEntrada botonesAnteriores)
         {
             var nuevos = botones & ~botonesAnteriores;
+
+            if (InterpretacionEntradas.Tiene(nuevos, BotonesEntrada.Especial))
+            {
+                return TipoAtaque.Especial;
+            }
 
             if (InterpretacionEntradas.Tiene(nuevos, BotonesEntrada.Fuerte))
             {

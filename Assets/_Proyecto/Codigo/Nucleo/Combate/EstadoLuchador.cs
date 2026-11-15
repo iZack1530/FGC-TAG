@@ -46,6 +46,9 @@ namespace FgcTag.Nucleo.Combate
         /// <summary>Vida restante; al llegar a 0 el luchador queda noqueado.</summary>
         public readonly int Vida;
 
+        /// <summary>El ataque en curso conectó, pero el rival lo bloqueó.</summary>
+        public readonly bool GolpeBloqueado;
+
         public EstadoLuchador(
             VectorFijo posicion,
             VectorFijo velocidad,
@@ -60,7 +63,8 @@ namespace FgcTag.Nucleo.Combate
             TipoAtaque ataqueEnBufer,
             int framesBufer,
             int golpesEnCombo,
-            int vida)
+            int vida,
+            bool golpeBloqueado)
         {
             Posicion = posicion;
             Velocidad = velocidad;
@@ -76,6 +80,7 @@ namespace FgcTag.Nucleo.Combate
             FramesBufer = framesBufer;
             GolpesEnCombo = golpesEnCombo;
             Vida = vida;
+            GolpeBloqueado = golpeBloqueado;
         }
 
         /// <summary>Luchador quieto en el suelo, sin velocidad y con la vida indicada.</summary>
@@ -94,7 +99,8 @@ namespace FgcTag.Nucleo.Combate
                 TipoAtaque.Ninguno,
                 0,
                 0,
-                vida);
+                vida,
+                false);
 
         /// <summary>1 si mira a la derecha, -1 si mira a la izquierda.</summary>
         public int SentidoAdelante => MiraDerecha ? 1 : -1;
@@ -106,47 +112,52 @@ namespace FgcTag.Nucleo.Combate
         public bool TieneAtaqueEnBufer => AtaqueEnBufer != TipoAtaque.Ninguno && FramesBufer > 0;
 
         public EstadoLuchador ConPosicion(VectorFijo posicion) =>
-            new EstadoLuchador(posicion, Velocidad, MiraDerecha, Accion, FramesEnAccion, FramesHitstop, FramesAturdimiento, GolpeConectado, BotonesAnteriores, Ataque, AtaqueEnBufer, FramesBufer, GolpesEnCombo, Vida);
+            new EstadoLuchador(posicion, Velocidad, MiraDerecha, Accion, FramesEnAccion, FramesHitstop, FramesAturdimiento, GolpeConectado, BotonesAnteriores, Ataque, AtaqueEnBufer, FramesBufer, GolpesEnCombo, Vida, GolpeBloqueado);
 
         public EstadoLuchador ConX(Fijo x) => ConPosicion(Posicion.ConX(x));
 
         public EstadoLuchador ConVelocidad(VectorFijo velocidad) =>
-            new EstadoLuchador(Posicion, velocidad, MiraDerecha, Accion, FramesEnAccion, FramesHitstop, FramesAturdimiento, GolpeConectado, BotonesAnteriores, Ataque, AtaqueEnBufer, FramesBufer, GolpesEnCombo, Vida);
+            new EstadoLuchador(Posicion, velocidad, MiraDerecha, Accion, FramesEnAccion, FramesHitstop, FramesAturdimiento, GolpeConectado, BotonesAnteriores, Ataque, AtaqueEnBufer, FramesBufer, GolpesEnCombo, Vida, GolpeBloqueado);
 
         public EstadoLuchador ConOrientacion(bool miraDerecha) =>
-            new EstadoLuchador(Posicion, Velocidad, miraDerecha, Accion, FramesEnAccion, FramesHitstop, FramesAturdimiento, GolpeConectado, BotonesAnteriores, Ataque, AtaqueEnBufer, FramesBufer, GolpesEnCombo, Vida);
+            new EstadoLuchador(Posicion, Velocidad, miraDerecha, Accion, FramesEnAccion, FramesHitstop, FramesAturdimiento, GolpeConectado, BotonesAnteriores, Ataque, AtaqueEnBufer, FramesBufer, GolpesEnCombo, Vida, GolpeBloqueado);
 
         /// <summary>Cambia de acción reiniciando el contador, o lo avanza si la acción se mantiene.</summary>
         public EstadoLuchador ConAccion(AccionLuchador accion) =>
-            new EstadoLuchador(Posicion, Velocidad, MiraDerecha, accion, accion == Accion ? FramesEnAccion + 1 : 0, FramesHitstop, FramesAturdimiento, GolpeConectado, BotonesAnteriores, Ataque, AtaqueEnBufer, FramesBufer, GolpesEnCombo, Vida);
+            new EstadoLuchador(Posicion, Velocidad, MiraDerecha, accion, accion == Accion ? FramesEnAccion + 1 : 0, FramesHitstop, FramesAturdimiento, GolpeConectado, BotonesAnteriores, Ataque, AtaqueEnBufer, FramesBufer, GolpesEnCombo, Vida, GolpeBloqueado);
 
         /// <summary>Empieza una acción desde su primer frame aunque sea la misma que la actual.</summary>
         public EstadoLuchador ConAccionNueva(AccionLuchador accion) =>
-            new EstadoLuchador(Posicion, Velocidad, MiraDerecha, accion, 0, FramesHitstop, FramesAturdimiento, GolpeConectado, BotonesAnteriores, Ataque, AtaqueEnBufer, FramesBufer, GolpesEnCombo, Vida);
+            new EstadoLuchador(Posicion, Velocidad, MiraDerecha, accion, 0, FramesHitstop, FramesAturdimiento, GolpeConectado, BotonesAnteriores, Ataque, AtaqueEnBufer, FramesBufer, GolpesEnCombo, Vida, GolpeBloqueado);
 
         public EstadoLuchador ConHitstop(int frames) =>
-            new EstadoLuchador(Posicion, Velocidad, MiraDerecha, Accion, FramesEnAccion, frames, FramesAturdimiento, GolpeConectado, BotonesAnteriores, Ataque, AtaqueEnBufer, FramesBufer, GolpesEnCombo, Vida);
+            new EstadoLuchador(Posicion, Velocidad, MiraDerecha, Accion, FramesEnAccion, frames, FramesAturdimiento, GolpeConectado, BotonesAnteriores, Ataque, AtaqueEnBufer, FramesBufer, GolpesEnCombo, Vida, GolpeBloqueado);
 
         public EstadoLuchador ConAturdimiento(int frames) =>
-            new EstadoLuchador(Posicion, Velocidad, MiraDerecha, Accion, FramesEnAccion, FramesHitstop, frames, GolpeConectado, BotonesAnteriores, Ataque, AtaqueEnBufer, FramesBufer, GolpesEnCombo, Vida);
+            new EstadoLuchador(Posicion, Velocidad, MiraDerecha, Accion, FramesEnAccion, FramesHitstop, frames, GolpeConectado, BotonesAnteriores, Ataque, AtaqueEnBufer, FramesBufer, GolpesEnCombo, Vida, GolpeBloqueado);
 
+        /// <summary>Marca si el ataque en curso conectó; el contacto se considera no bloqueado.</summary>
         public EstadoLuchador ConGolpeConectado(bool golpeConectado) =>
-            new EstadoLuchador(Posicion, Velocidad, MiraDerecha, Accion, FramesEnAccion, FramesHitstop, FramesAturdimiento, golpeConectado, BotonesAnteriores, Ataque, AtaqueEnBufer, FramesBufer, GolpesEnCombo, Vida);
+            new EstadoLuchador(Posicion, Velocidad, MiraDerecha, Accion, FramesEnAccion, FramesHitstop, FramesAturdimiento, golpeConectado, BotonesAnteriores, Ataque, AtaqueEnBufer, FramesBufer, GolpesEnCombo, Vida, false);
+
+        /// <summary>El ataque en curso conectó y el rival lo bloqueó.</summary>
+        public EstadoLuchador ConGolpeBloqueado() =>
+            new EstadoLuchador(Posicion, Velocidad, MiraDerecha, Accion, FramesEnAccion, FramesHitstop, FramesAturdimiento, true, BotonesAnteriores, Ataque, AtaqueEnBufer, FramesBufer, GolpesEnCombo, Vida, true);
 
         public EstadoLuchador ConBotonesAnteriores(BotonesEntrada botones) =>
-            new EstadoLuchador(Posicion, Velocidad, MiraDerecha, Accion, FramesEnAccion, FramesHitstop, FramesAturdimiento, GolpeConectado, botones, Ataque, AtaqueEnBufer, FramesBufer, GolpesEnCombo, Vida);
+            new EstadoLuchador(Posicion, Velocidad, MiraDerecha, Accion, FramesEnAccion, FramesHitstop, FramesAturdimiento, GolpeConectado, botones, Ataque, AtaqueEnBufer, FramesBufer, GolpesEnCombo, Vida, GolpeBloqueado);
 
         public EstadoLuchador ConAtaque(TipoAtaque ataque) =>
-            new EstadoLuchador(Posicion, Velocidad, MiraDerecha, Accion, FramesEnAccion, FramesHitstop, FramesAturdimiento, GolpeConectado, BotonesAnteriores, ataque, AtaqueEnBufer, FramesBufer, GolpesEnCombo, Vida);
+            new EstadoLuchador(Posicion, Velocidad, MiraDerecha, Accion, FramesEnAccion, FramesHitstop, FramesAturdimiento, GolpeConectado, BotonesAnteriores, ataque, AtaqueEnBufer, FramesBufer, GolpesEnCombo, Vida, GolpeBloqueado);
 
         public EstadoLuchador ConBufer(TipoAtaque ataque, int frames) =>
-            new EstadoLuchador(Posicion, Velocidad, MiraDerecha, Accion, FramesEnAccion, FramesHitstop, FramesAturdimiento, GolpeConectado, BotonesAnteriores, Ataque, ataque, frames, GolpesEnCombo, Vida);
+            new EstadoLuchador(Posicion, Velocidad, MiraDerecha, Accion, FramesEnAccion, FramesHitstop, FramesAturdimiento, GolpeConectado, BotonesAnteriores, Ataque, ataque, frames, GolpesEnCombo, Vida, GolpeBloqueado);
 
         public EstadoLuchador ConGolpesEnCombo(int golpes) =>
-            new EstadoLuchador(Posicion, Velocidad, MiraDerecha, Accion, FramesEnAccion, FramesHitstop, FramesAturdimiento, GolpeConectado, BotonesAnteriores, Ataque, AtaqueEnBufer, FramesBufer, golpes, Vida);
+            new EstadoLuchador(Posicion, Velocidad, MiraDerecha, Accion, FramesEnAccion, FramesHitstop, FramesAturdimiento, GolpeConectado, BotonesAnteriores, Ataque, AtaqueEnBufer, FramesBufer, golpes, Vida, GolpeBloqueado);
 
         public EstadoLuchador ConVida(int vida) =>
-            new EstadoLuchador(Posicion, Velocidad, MiraDerecha, Accion, FramesEnAccion, FramesHitstop, FramesAturdimiento, GolpeConectado, BotonesAnteriores, Ataque, AtaqueEnBufer, FramesBufer, GolpesEnCombo, vida);
+            new EstadoLuchador(Posicion, Velocidad, MiraDerecha, Accion, FramesEnAccion, FramesHitstop, FramesAturdimiento, GolpeConectado, BotonesAnteriores, Ataque, AtaqueEnBufer, FramesBufer, GolpesEnCombo, vida, GolpeBloqueado);
 
         public SumaVerificacion AgregarA(SumaVerificacion suma) =>
             suma.Agregar(Posicion)
@@ -162,6 +173,7 @@ namespace FgcTag.Nucleo.Combate
                 .Agregar((int)AtaqueEnBufer)
                 .Agregar(FramesBufer)
                 .Agregar(GolpesEnCombo)
-                .Agregar(Vida);
+                .Agregar(Vida)
+                .Agregar(GolpeBloqueado);
     }
 }

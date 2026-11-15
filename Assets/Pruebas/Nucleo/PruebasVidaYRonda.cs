@@ -70,12 +70,23 @@ namespace FgcTag.Pruebas.Nucleo
         }
 
         [Test]
-        public void UnGolpeBloqueadoNoQuitaVida()
+        public void UnGolpeBloqueadoSoloHaceDanioChip()
         {
             var estado = GolpeDebilHastaElImpacto(Inicial(0, 1), BotonesEntrada.Derecha);
 
             Assert.AreEqual(AccionLuchador.Blockstun, estado.Luchador2.Accion);
-            Assert.AreEqual(VidaMaxima, estado.Luchador2.Vida);
+            Assert.AreEqual(10, Danio.AlBloquear(100));
+            Assert.AreEqual(VidaMaxima - 10, estado.Luchador2.Vida);
+        }
+
+        [Test]
+        public void ElDanioChipNuncaNoquea()
+        {
+            var estado = GolpeDebilHastaElImpacto(ConVidas(Inicial(0, 1), VidaMaxima, 5), BotonesEntrada.Derecha);
+
+            Assert.AreEqual(1, estado.Luchador2.Vida);
+            Assert.AreEqual(AccionLuchador.Blockstun, estado.Luchador2.Accion);
+            Assert.AreEqual(ResultadoRonda.EnCurso, estado.Resultado);
         }
 
         [Test]
@@ -149,7 +160,7 @@ namespace FgcTag.Pruebas.Nucleo
             estado = Simular(estado, BotonesEntrada.Ninguno, BotonesEntrada.Arriba, FrameDeImpacto - 1);
 
             Assert.AreEqual(ResultadoRonda.GanaJugador1, estado.Resultado);
-            Assert.AreEqual(AccionLuchador.EnAire, estado.Luchador2.Accion);
+            Assert.AreEqual(AccionLuchador.GolpeadoEnAire, estado.Luchador2.Accion);
 
             estado = Simular(estado, BotonesEntrada.Ninguno, BotonesEntrada.Ninguno, 60);
 

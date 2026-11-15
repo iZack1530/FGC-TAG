@@ -140,7 +140,7 @@ namespace FgcTag.Presentacion
                     return _color;
                 }
 
-                return estado.Accion == AccionLuchador.Atacando ? ColorImpactoAtacante : ColorImpactoGolpeado;
+                return EstadosAccion.EstaAtacando(estado.Accion) ? ColorImpactoAtacante : ColorImpactoGolpeado;
             }
 
             /// <summary>La caja de golpe ya viene en coordenadas de escenario, por eso no cuelga del luchador.</summary>
@@ -177,6 +177,7 @@ namespace FgcTag.Presentacion
                     case AccionLuchador.Aterrizaje:
                         return 0.8f;
                     case AccionLuchador.Noqueado:
+                    case AccionLuchador.Derribado:
                         return 0.25f;
                     default:
                         return 1f;
