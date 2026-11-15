@@ -1,3 +1,4 @@
+using FgcTag.Nucleo.Colisiones;
 using FgcTag.Nucleo.Combate;
 using FgcTag.Nucleo.Matematica;
 
@@ -19,6 +20,30 @@ namespace FgcTag.Contenido
             velocidadAdelante: Fijo.DesdeFraccion(7, 100),
             velocidadAtras: Fijo.DesdeFraccion(6, 100));
 
+        /// <summary>
+        /// Golpe débil de pie: golpea en el frame 5, dura 16 frames, +3 al golpear y -1 al
+        /// bloquear. El retroceso aleja al rival unos 0.55 m al golpear y 0.36 m al bloquear.
+        /// </summary>
+        public static readonly DatosMovimiento GolpeDebilCajaGris = new DatosMovimiento(
+            arranque: 4,
+            activos: 3,
+            recuperacion: 9,
+            hitstun: 14,
+            blockstun: 10,
+            hitstop: 8,
+            retrocesoAlGolpear: Fijo.DesdeFraccion(10, 100),
+            retrocesoAlBloquear: Fijo.DesdeFraccion(8, 100),
+            cajaGolpe: new CajaColision(
+                new VectorFijo(Fijo.DesdeFraccion(75, 100), Fijo.DesdeFraccion(115, 100)),
+                Fijo.DesdeFraccion(45, 100),
+                Fijo.DesdeFraccion(2, 10)));
+
+        public static readonly MedidasCajaDanio CajaDanioCajaGris = new MedidasCajaDanio(
+            medioAncho: Fijo.DesdeFraccion(4, 10),
+            medioAltoDePie: Fijo.DesdeFraccion(9, 10),
+            medioAltoAgachado: Fijo.DesdeFraccion(5, 10),
+            medioAltoAire: Fijo.DesdeFraccion(5, 10));
+
         public static readonly ParametrosLuchador LuchadorCajaGris = new ParametrosLuchador(
             velocidadAdelante: Fijo.DesdeFraccion(6, 100),
             velocidadAtras: Fijo.DesdeFraccion(45, 1000),
@@ -26,13 +51,16 @@ namespace FgcTag.Contenido
             medioAltoEmpuje: Fijo.DesdeFraccion(9, 10),
             medioAnchoEmpujeAire: Fijo.DesdeFraccion(3, 10),
             medioAltoEmpujeAire: Fijo.DesdeFraccion(5, 10),
-            salto: SaltoCajaGris);
+            salto: SaltoCajaGris,
+            medidasDanio: CajaDanioCajaGris,
+            golpeDebil: GolpeDebilCajaGris);
 
         public static readonly ConfiguracionCombate ConfiguracionCajasGrises = new ConfiguracionCombate(
             LuchadorCajaGris,
             LuchadorCajaGris,
             Fijo.DesdeEntero(-7),
-            Fijo.DesdeEntero(7));
+            Fijo.DesdeEntero(7),
+            friccionRetroceso: Fijo.DesdeFraccion(1, 100));
 
         public static readonly EstadoPartida EstadoInicial = EstadoPartida.Crear(
             VectorFijo.DesdeEnteros(-2, 0),

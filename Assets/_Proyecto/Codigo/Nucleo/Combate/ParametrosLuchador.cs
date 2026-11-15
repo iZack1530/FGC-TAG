@@ -25,6 +25,10 @@ namespace FgcTag.Nucleo.Combate
         public readonly Fijo MedioAltoEmpujeAire;
 
         public readonly ParametrosSalto Salto;
+        public readonly MedidasCajaDanio MedidasDanio;
+
+        /// <summary>Ataque del botón Débil en tierra.</summary>
+        public readonly DatosMovimiento GolpeDebil;
 
         public ParametrosLuchador(
             Fijo velocidadAdelante,
@@ -33,7 +37,9 @@ namespace FgcTag.Nucleo.Combate
             Fijo medioAltoEmpuje,
             Fijo medioAnchoEmpujeAire,
             Fijo medioAltoEmpujeAire,
-            ParametrosSalto salto)
+            ParametrosSalto salto,
+            MedidasCajaDanio medidasDanio,
+            DatosMovimiento golpeDebil)
         {
             if (velocidadAdelante < Fijo.Cero || velocidadAtras < Fijo.Cero)
             {
@@ -53,6 +59,8 @@ namespace FgcTag.Nucleo.Combate
             MedioAnchoEmpujeAire = medioAnchoEmpujeAire;
             MedioAltoEmpujeAire = medioAltoEmpujeAire;
             Salto = salto;
+            MedidasDanio = medidasDanio;
+            GolpeDebil = golpeDebil;
         }
 
         /// <summary>Medio ancho más grande entre tierra y aire; el escenario debe caber dos de cada lado.</summary>
@@ -67,6 +75,29 @@ namespace FgcTag.Nucleo.Combate
             var centro = new VectorFijo(luchador.Posicion.X, luchador.Posicion.Y + medioAlto);
 
             return new CajaColision(centro, medioAncho, medioAlto);
+        }
+
+        /// <summary>Caja de daño (hurtbox) apoyada en los pies del luchador, según su postura.</summary>
+        public CajaColision CajaDanio(in EstadoLuchador luchador)
+        {
+            var medioAlto = MedidasDanio.MedioAlto(luchador.Accion);
+            var centro = new VectorFijo(luchador.Posicion.X, luchador.Posicion.Y + medioAlto);
+
+            return new CajaColision(centro, MedidasDanio.MedioAncho, medioAlto);
+        }
+
+        /// <summary>
+        /// Caja de golpe (hitbox) en el escenario si el luchador está en un frame activo de su
+        /// ataque; <c>null</c> en cualquier otro caso. No indica si ya conectó.
+        /// </summary>
+        public CajaColision? CajaGolpeActiva(in EstadoLuchador luchador)
+        {
+            if (luchador.Accion != AccionLuchador.Atacando || !GolpeDebil.EstaActivo(luchador.FramesEnAccion))
+            {
+                return null;
+            }
+
+            return GolpeDebil.CajaGolpe.Orientada(luchador.MiraDerecha).Desplazada(luchador.Posicion);
         }
     }
 }

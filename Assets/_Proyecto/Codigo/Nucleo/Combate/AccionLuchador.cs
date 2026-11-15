@@ -18,19 +18,35 @@ namespace FgcTag.Nucleo.Combate
 
         /// <summary>Frames de recuperación al tocar el suelo, sin control.</summary>
         Aterrizaje = 6,
+
+        /// <summary>Ejecutando un ataque: arranque, frames activos y recuperación.</summary>
+        Atacando = 7,
+
+        /// <summary>Aturdido en el suelo por un golpe recibido.</summary>
+        Hitstun = 8,
+
+        /// <summary>Aturdido en el suelo por un golpe bloqueado.</summary>
+        Blockstun = 9,
     }
 
     public static class EstadosAccion
     {
-        /// <summary>Acciones en el suelo desde las que el jugador puede caminar, agacharse o saltar.</summary>
+        /// <summary>Acciones en el suelo desde las que el jugador puede caminar, agacharse, saltar o atacar.</summary>
         public static bool TieneControlEnTierra(AccionLuchador accion) =>
             accion == AccionLuchador.Quieto ||
             accion == AccionLuchador.CaminandoAdelante ||
             accion == AccionLuchador.CaminandoAtras ||
             accion == AccionLuchador.Agachado;
 
-        /// <summary>Acciones en las que el luchador se gira para mirar al rival. En el aire conserva su orientación.</summary>
+        /// <summary>Acciones en las que el luchador se gira para mirar al rival. En el aire, atacando o aturdido conserva su orientación.</summary>
         public static bool PuedeGirar(AccionLuchador accion) =>
             TieneControlEnTierra(accion) || accion == AccionLuchador.Aterrizaje;
+
+        /// <summary>Se puede bloquear con control en tierra, o encadenando bloqueos mientras dura el blockstun.</summary>
+        public static bool PuedeBloquear(AccionLuchador accion) =>
+            TieneControlEnTierra(accion) || accion == AccionLuchador.Blockstun;
+
+        public static bool EstaAturdido(AccionLuchador accion) =>
+            accion == AccionLuchador.Hitstun || accion == AccionLuchador.Blockstun;
     }
 }

@@ -57,11 +57,19 @@ El reparto de trabajo es: **VS Code** para leer y editar código y para Git; **U
 | Moverse | W A S D | Flechas | Cruceta o palanca izquierda |
 | Saltar (neutral, adelante, atrás) | W, W + D, W + A | Flecha arriba (+ dirección) | Arriba (+ dirección) |
 | Agacharse | S | Flecha abajo | Abajo |
-| Débil / Medio / Fuerte | U / I / O | Num 4 / 5 / 6 | Cuadrado-X / Triángulo-Y / Círculo-B |
-| Especial | J | Num 1 | Equis-A |
-| Asistencias | K / L | Num 2 / 3 | L1 / R1 |
+| Golpe débil | U | Num 4 | Cuadrado-X |
+| Bloquear | Mantener la dirección que aleja del rival | Igual | Igual |
+| Medio / Fuerte (aún sin ataque) | I / O | Num 5 / 6 | Triángulo-Y / Círculo-B |
+| Especial (aún sin ataque) | J | Num 1 | Equis-A |
+| Asistencias (aún sin función) | K / L | Num 2 / 3 | L1 / R1 |
+| Pausar / reanudar la simulación | F1 | | |
+| Avanzar un frame (en pausa) | F2 | | |
 
-El primer mando conectado es del jugador 1 y el segundo del jugador 2. La esquina superior izquierda muestra el frame, la suma de verificación y el estado de cada luchador.
+El primer mando conectado es del jugador 1 y el segundo del jugador 2. La esquina superior izquierda muestra el frame, la suma de verificación, el estado de cada luchador y la frame data del golpe débil.
+
+La última línea del HUD mide la ventaja en frames del último golpe: cuántos frames antes (+) o después (−) que el rival recupera el control el atacante.
+
+Durante los frames activos del ataque se dibuja en rojo su caja de golpe. Mientras dura el hitstop, el atacante se pinta de blanco y el rival de negro.
 
 ## Estructura
 
