@@ -69,7 +69,7 @@ namespace FgcTag.Arranque
             }
 
             _jugadorAtacante = golpea1 ? 1 : 2;
-            _bloqueado = (golpea1 ? actual.Luchador2 : actual.Luchador1).Accion == AccionLuchador.Blockstun;
+            _bloqueado = EstadosAccion.EstaBloqueando((golpea1 ? actual.Luchador2 : actual.Luchador1).Accion);
             _frameAtacante = 0;
             _frameDefensor = 0;
 

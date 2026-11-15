@@ -225,6 +225,7 @@ namespace FgcTag.Nucleo.Combate
 
                 case AccionLuchador.Hitstun:
                 case AccionLuchador.Blockstun:
+                case AccionLuchador.BlockstunAgachado:
                     return luchador.FramesAturdimiento <= 0
                         ? ControlarEnTierra(luchador.ConVelocidad(VectorFijo.Cero).ConGolpesEnCombo(0), botones, parametros)
                         : Deslizar(luchador, configuracion.FriccionRetroceso).ConAturdimiento(luchador.FramesAturdimiento - 1);
@@ -245,6 +246,14 @@ namespace FgcTag.Nucleo.Combate
                     return MoverEnAire(
                         luchador.ConAccion(AccionLuchador.GolpeadoEnAire).ConAturdimiento(luchador.FramesAturdimiento > 0 ? luchador.FramesAturdimiento - 1 : 0),
                         configuracion.Juggle.GravedadCon(luchador.GolpesEnCombo),
+                        parametros.Salto.FramesAterrizaje);
+
+                case AccionLuchador.RecuperandoEnAire:
+                    return MoverEnAire(
+                        luchador.FramesEnAccion + 1 >= configuracion.Juggle.FramesRecuperacion
+                            ? luchador.ConAccionNueva(AccionLuchador.EnAire)
+                            : luchador.ConAccion(AccionLuchador.RecuperandoEnAire),
+                        parametros.Salto.Gravedad,
                         parametros.Salto.FramesAterrizaje);
 
                 case AccionLuchador.BloqueandoEnAire:
@@ -314,15 +323,16 @@ namespace FgcTag.Nucleo.Combate
         }
 
         /// <summary>
-        /// Recuperación en el aire: al agotarse el aturdimiento, el luchador recobra el control con
-        /// un pequeño salto hacia la dirección que mantenga, y el combo termina.
+        /// Recuperación en el aire: al agotarse el aturdimiento, el combo termina y el luchador da
+        /// un pequeño salto hacia la dirección que mantenga. Mientras dura la recuperación no puede
+        /// atacar; sus primeros frames son invencibles y en el resto ya puede bloquear.
         /// </summary>
         private static EstadoLuchador RecuperarEnAire(in EstadoLuchador luchador, BotonesEntrada botones, in ReglasJuggle juggle)
         {
             var direccion = InterpretacionEntradas.DireccionHorizontal(botones);
 
             return luchador
-                .ConAccionNueva(AccionLuchador.EnAire)
+                .ConAccionNueva(AccionLuchador.RecuperandoEnAire)
                 .ConGolpesEnCombo(0)
                 .ConVelocidad(new VectorFijo(juggle.VelocidadRecuperacion * direccion, juggle.ImpulsoRecuperacion));
         }

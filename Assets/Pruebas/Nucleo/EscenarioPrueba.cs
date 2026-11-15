@@ -186,7 +186,9 @@ namespace FgcTag.Pruebas.Nucleo
             reduccionAturdimientoPorGolpe: 2,
             aturdimientoMinimo: 4,
             velocidadRecuperacion: Fijo.DesdeFraccion(1, 8),
-            impulsoRecuperacion: Fijo.DesdeFraccion(1, 4));
+            impulsoRecuperacion: Fijo.DesdeFraccion(1, 4),
+            framesRecuperacion: 16,
+            framesRecuperacionInvencible: 8);
 
         public const int VidaMaxima = 1000;
 
@@ -253,6 +255,15 @@ namespace FgcTag.Pruebas.Nucleo
         /// <summary>Copia del estado con el jugador 2 saltando, quieto en el aire a la altura indicada.</summary>
         public static EstadoPartida ConJugador2EnElAire(EstadoPartida estado, int altura) =>
             new EstadoPartida(estado.Frame, estado.Luchador1, EnElAire(estado.Luchador2, altura), estado.FramesRestantes, estado.Resultado);
+
+        /// <summary>Copia del estado con el jugador 2 en el primer frame de su recuperación en el aire, a la altura indicada.</summary>
+        public static EstadoPartida ConJugador2RecuperandoseEnElAire(EstadoPartida estado, int altura) =>
+            new EstadoPartida(
+                estado.Frame,
+                estado.Luchador1,
+                EnElAire(estado.Luchador2, altura).ConAccionNueva(AccionLuchador.RecuperandoEnAire),
+                estado.FramesRestantes,
+                estado.Resultado);
 
         private static EstadoLuchador EnElAire(EstadoLuchador luchador, int altura) =>
             luchador.ConPosicion(luchador.Posicion.ConY(Fijo.DesdeEntero(altura))).ConAccionNueva(AccionLuchador.EnAire);
