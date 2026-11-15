@@ -2,7 +2,8 @@
     "name": "FgcTag.Entrada",
     "rootNamespace": "FgcTag.Entrada",
     "references": [
-        "FgcTag.Nucleo"
+        "FgcTag.Nucleo",
+        "Unity.InputSystem"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
