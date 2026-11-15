@@ -36,6 +36,7 @@ namespace FgcTag.Arranque
         private MedidorVentaja _medidor;
         private GUIStyle _estiloTexto;
         private GUIStyle _estiloAviso;
+        private string _ultimoAtaqueJugador1 = string.Empty;
 
         private static readonly Color ColorFondoBarra = new Color(0.12f, 0.12f, 0.14f);
         private static readonly Color ColorVidaJugador1 = new Color(0.25f, 0.55f, 0.95f);
@@ -61,6 +62,7 @@ namespace FgcTag.Arranque
             {
                 _estado = DatosPrueba.EstadoInicial;
                 _medidor = new MedidorVentaja();
+                _ultimoAtaqueJugador1 = string.Empty;
                 _acumulado = 0;
             }
 
@@ -107,6 +109,13 @@ namespace FgcTag.Arranque
             var anterior = _estado;
             _estado = SimuladorCombate.Avanzar(_estado, entradas, _configuracion);
             _medidor.Observar(anterior, _estado);
+
+            if (EstadosAccion.EstaAtacando(_estado.Luchador1.Accion))
+            {
+                _ultimoAtaqueJugador1 = DescribirMovimiento(
+                    NombreAtaque(_estado.Luchador1),
+                    _configuracion.Jugador1.MovimientoEnCurso(_estado.Luchador1));
+            }
         }
 
         private void OnGUI()
@@ -126,15 +135,13 @@ namespace FgcTag.Arranque
 
             var modo = _pausado ? "EN PAUSA (F2 avanza un frame, F1 reanuda)" : "F1 pausa";
 
-            GUILayout.BeginArea(new Rect(12, 12, Screen.width - 24, 275), GUI.skin.box);
+            GUILayout.BeginArea(new Rect(12, 12, Screen.width - 24, 205), GUI.skin.box);
             GUILayout.Label($"Frame {_estado.Frame}   Suma {_estado.CalcularSumaVerificacion()}   {modo}", _estiloTexto);
             GUILayout.Label(DescribirLuchador("J1", _estado.Luchador1), _estiloTexto);
             GUILayout.Label(DescribirLuchador("J2", _estado.Luchador2), _estiloTexto);
-            GUILayout.Label(DescribirMovimiento("Débil", _configuracion.Jugador1.GolpeDebil), _estiloTexto);
-            GUILayout.Label(DescribirMovimiento("Medio", _configuracion.Jugador1.GolpeMedio), _estiloTexto);
-            GUILayout.Label(DescribirMovimiento("Fuerte", _configuracion.Jugador1.GolpeFuerte), _estiloTexto);
+            GUILayout.Label($"Último ataque de J1: {_ultimoAtaqueJugador1}", _estiloTexto);
             GUILayout.Label(_medidor.Resumen, _estiloTexto);
-            GUILayout.Label($"Daño en combo: -{_configuracion.Danio.ReduccionPorGolpe}% por golpe, mínimo {_configuracion.Danio.PorcentajeMinimo}%   F3 nueva ronda", _estiloTexto);
+            GUILayout.Label($"Daño en combo: -{_configuracion.Danio.ReduccionPorGolpe}% por golpe, mínimo {_configuracion.Danio.PorcentajeMinimo}%; bloqueado {_configuracion.Danio.PorcentajeAlBloquear}%   F3 nueva ronda", _estiloTexto);
             GUILayout.EndArea();
         }
 
@@ -195,13 +202,23 @@ namespace FgcTag.Arranque
             $"{etiqueta}: {(MedidorVentaja.TieneControl(luchador) ? "LIBRE" : "sin control")}   {DescribirAccion(luchador)} ({luchador.FramesEnAccion} f)   hitstop {luchador.FramesHitstop}   aturdido {luchador.FramesAturdimiento}   combo {luchador.GolpesEnCombo}   vida {luchador.Vida}   búfer {DescribirBufer(luchador)}   pos {luchador.Posicion}   vel {luchador.Velocidad}   mira {(luchador.MiraDerecha ? "derecha" : "izquierda")}";
 
         private static string DescribirAccion(in EstadoLuchador luchador) =>
-            luchador.Accion == AccionLuchador.Atacando ? $"Atacando {luchador.Ataque}" : luchador.Accion.ToString();
+            EstadosAccion.EstaAtacando(luchador.Accion) ? $"Atacando: {NombreAtaque(luchador)}" : luchador.Accion.ToString();
+
+        private static string NombreAtaque(in EstadoLuchador luchador)
+        {
+            if (luchador.Ataque == TipoAtaque.Especial)
+            {
+                return "Lanzador";
+            }
+
+            return luchador.Accion == AccionLuchador.AtacandoEnAire ? $"{luchador.Ataque} aéreo" : luchador.Ataque.ToString();
+        }
 
         private static string DescribirBufer(in EstadoLuchador luchador) =>
             luchador.TieneAtaqueEnBufer ? $"{luchador.AtaqueEnBufer} ({luchador.FramesBufer} f)" : "vacío";
 
         private static string DescribirMovimiento(string nombre, in DatosMovimiento movimiento) =>
-            $"{nombre}: arranque {movimiento.Arranque}   activos {movimiento.Activos}   recuperación {movimiento.Recuperacion}   hitstop {movimiento.Hitstop}   daño {movimiento.Danio}   ventaja {movimiento.VentajaAlGolpear:+0;-0;0} al golpear, {movimiento.VentajaAlBloquear:+0;-0;0} al bloquear";
+            $"{nombre}{(movimiento.Lanza ? " (lanza)" : string.Empty)}: arranque {movimiento.Arranque}   activos {movimiento.Activos}   recuperación {movimiento.Recuperacion}   hitstop {movimiento.Hitstop}   daño {movimiento.Danio}   ventaja {movimiento.VentajaAlGolpear:+0;-0;0} al golpear, {movimiento.VentajaAlBloquear:+0;-0;0} al bloquear";
 
         private static void ColocarCamara()
         {

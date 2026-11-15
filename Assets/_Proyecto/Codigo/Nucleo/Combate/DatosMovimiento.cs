@@ -40,6 +40,15 @@ namespace FgcTag.Nucleo.Combate
         /// <summary>Caja de golpe relativa a los pies del atacante mirando a la derecha.</summary>
         public readonly CajaColision CajaGolpe;
 
+        /// <summary>
+        /// Velocidad vertical con la que sale despedido un rival golpeado en tierra. Cero en los
+        /// golpes normales; mayor que cero en un lanzador.
+        /// </summary>
+        public readonly Fijo VelocidadLanzamiento;
+
+        /// <summary>Si conecta, se puede cancelar con un salto manteniendo arriba (para seguir al rival lanzado).</summary>
+        public readonly bool CancelableConSalto;
+
         public DatosMovimiento(
             int arranque,
             int activos,
@@ -50,8 +59,15 @@ namespace FgcTag.Nucleo.Combate
             int danio,
             Fijo retrocesoAlGolpear,
             Fijo retrocesoAlBloquear,
-            CajaColision cajaGolpe)
+            CajaColision cajaGolpe,
+            Fijo velocidadLanzamiento = default,
+            bool cancelableConSalto = false)
         {
+            if (velocidadLanzamiento < Fijo.Cero)
+            {
+                throw new ArgumentOutOfRangeException(nameof(velocidadLanzamiento), "La velocidad de lanzamiento no puede ser negativa.");
+            }
+
             if (arranque < 0 || activos < 1 || recuperacion < 0)
             {
                 throw new ArgumentOutOfRangeException(nameof(activos), "Un movimiento necesita al menos 1 frame activo y duraciones no negativas.");
@@ -82,7 +98,12 @@ namespace FgcTag.Nucleo.Combate
             RetrocesoAlGolpear = retrocesoAlGolpear;
             RetrocesoAlBloquear = retrocesoAlBloquear;
             CajaGolpe = cajaGolpe;
+            VelocidadLanzamiento = velocidadLanzamiento;
+            CancelableConSalto = cancelableConSalto;
         }
+
+        /// <summary>El golpe levanta del suelo al rival en lugar de dejarlo en hitstun.</summary>
+        public bool Lanza => VelocidadLanzamiento > Fijo.Cero;
 
         public int DuracionTotal => Arranque + Activos + Recuperacion;
 

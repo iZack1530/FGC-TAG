@@ -193,7 +193,7 @@ namespace FgcTag.Pruebas.Nucleo
             var semilla = 1530u;
             var estado = SimularPseudoaleatorio(Inicial(-1, 1), ref semilla, 600);
 
-            Assert.AreEqual("34980ECB22EFF344", estado.CalcularSumaVerificacion().ToString());
+            Assert.AreEqual("6A5A659660329734", estado.CalcularSumaVerificacion().ToString());
         }
     }
 }

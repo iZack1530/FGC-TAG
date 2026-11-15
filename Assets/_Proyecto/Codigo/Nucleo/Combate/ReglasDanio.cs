@@ -14,8 +14,16 @@ namespace FgcTag.Nucleo.Combate
         /// <summary>Porcentaje del daño base por debajo del cual el escalado ya no baja.</summary>
         public readonly int PorcentajeMinimo;
 
-        public ReglasDanio(int reduccionPorGolpe, int porcentajeMinimo)
+        /// <summary>Porcentaje del daño base que atraviesa el bloqueo (daño chip).</summary>
+        public readonly int PorcentajeAlBloquear;
+
+        public ReglasDanio(int reduccionPorGolpe, int porcentajeMinimo, int porcentajeAlBloquear)
         {
+            if (porcentajeAlBloquear < 0 || porcentajeAlBloquear > 100)
+            {
+                throw new ArgumentOutOfRangeException(nameof(porcentajeAlBloquear), "El porcentaje al bloquear va de 0 a 100.");
+            }
+
             if (reduccionPorGolpe < 0 || reduccionPorGolpe > 100)
             {
                 throw new ArgumentOutOfRangeException(nameof(reduccionPorGolpe), "La reducción por golpe va de 0 a 100.");
@@ -28,7 +36,11 @@ namespace FgcTag.Nucleo.Combate
 
             ReduccionPorGolpe = reduccionPorGolpe;
             PorcentajeMinimo = porcentajeMinimo;
+            PorcentajeAlBloquear = porcentajeAlBloquear;
         }
+
+        /// <summary>Daño chip de un golpe bloqueado, redondeado hacia abajo. No escala con el combo.</summary>
+        public int AlBloquear(int danioBase) => danioBase * PorcentajeAlBloquear / 100;
 
         /// <param name="numeroDeGolpe">Posición del golpe dentro del combo; 1 es el primero.</param>
         public int Porcentaje(int numeroDeGolpe)

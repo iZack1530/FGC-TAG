@@ -54,8 +54,8 @@ namespace FgcTag.Arranque
         /// <summary>Un golpe empieza cuando el hitstop pasa de 0 a más de 0. Los intercambios no se miden.</summary>
         private bool EmpiezaGolpe(in EstadoPartida anterior, in EstadoPartida actual)
         {
-            var golpea1 = !anterior.Luchador1.EnHitstop && actual.Luchador1.EnHitstop && actual.Luchador1.Accion == AccionLuchador.Atacando;
-            var golpea2 = !anterior.Luchador2.EnHitstop && actual.Luchador2.EnHitstop && actual.Luchador2.Accion == AccionLuchador.Atacando;
+            var golpea1 = !anterior.Luchador1.EnHitstop && actual.Luchador1.EnHitstop && EstadosAccion.EstaAtacando(actual.Luchador1.Accion);
+            var golpea2 = !anterior.Luchador2.EnHitstop && actual.Luchador2.EnHitstop && EstadosAccion.EstaAtacando(actual.Luchador2.Accion);
 
             if (golpea1 == golpea2)
             {

@@ -30,10 +30,8 @@ namespace FgcTag.Nucleo.Combate
             {
                 case AccionLuchador.Agachado:
                     return MedioAltoAgachado;
-                case AccionLuchador.EnAire:
-                    return MedioAltoAire;
                 default:
-                    return MedioAltoDePie;
+                    return EstadosAccion.EstaEnElAire(accion) ? MedioAltoAire : MedioAltoDePie;
             }
         }
     }

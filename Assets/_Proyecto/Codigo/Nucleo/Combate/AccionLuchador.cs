@@ -30,6 +30,15 @@ namespace FgcTag.Nucleo.Combate
 
         /// <summary>Sin vida: en el suelo y sin control hasta que empiece otra ronda.</summary>
         Noqueado = 10,
+
+        /// <summary>Ejecutando un ataque en el aire; la trayectoria del salto no cambia.</summary>
+        AtacandoEnAire = 11,
+
+        /// <summary>Golpeado en el aire o lanzado: cae sin control y puede recibir más golpes (juggle).</summary>
+        GolpeadoEnAire = 12,
+
+        /// <summary>En el suelo tras caer golpeado: invulnerable hasta levantarse.</summary>
+        Derribado = 13,
     }
 
     public static class EstadosAccion
@@ -48,6 +57,22 @@ namespace FgcTag.Nucleo.Combate
         /// <summary>Se puede bloquear con control en tierra, o encadenando bloqueos mientras dura el blockstun.</summary>
         public static bool PuedeBloquear(AccionLuchador accion) =>
             TieneControlEnTierra(accion) || accion == AccionLuchador.Blockstun;
+
+        public static bool EstaEnElAire(AccionLuchador accion) =>
+            accion == AccionLuchador.EnAire ||
+            accion == AccionLuchador.AtacandoEnAire ||
+            accion == AccionLuchador.GolpeadoEnAire;
+
+        public static bool EstaAtacando(AccionLuchador accion) =>
+            accion == AccionLuchador.Atacando || accion == AccionLuchador.AtacandoEnAire;
+
+        /// <summary>Acciones en las que ningún golpe puede conectar.</summary>
+        public static bool EsInvulnerable(AccionLuchador accion) =>
+            accion == AccionLuchador.Derribado || accion == AccionLuchador.Noqueado;
+
+        /// <summary>Recibiendo un combo: el siguiente golpe cuenta como parte de él.</summary>
+        public static bool EstaEnCombo(AccionLuchador accion) =>
+            accion == AccionLuchador.Hitstun || accion == AccionLuchador.GolpeadoEnAire;
 
         public static bool EstaAturdido(AccionLuchador accion) =>
             accion == AccionLuchador.Hitstun || accion == AccionLuchador.Blockstun;

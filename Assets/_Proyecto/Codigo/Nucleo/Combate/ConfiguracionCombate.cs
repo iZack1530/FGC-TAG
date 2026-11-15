@@ -22,6 +22,8 @@ namespace FgcTag.Nucleo.Combate
 
         public readonly ReglasDanio Danio;
 
+        public readonly ReglasJuggle Juggle;
+
         /// <summary>Duración del reloj de la ronda, en frames de 60 Hz.</summary>
         public readonly int FramesPorRonda;
 
@@ -33,6 +35,7 @@ namespace FgcTag.Nucleo.Combate
             Fijo friccionRetroceso,
             int framesBuferEntradas,
             ReglasDanio danio,
+            ReglasJuggle juggle,
             int framesPorRonda)
         {
             var anchoMinimo = (jugador1.MedioAnchoMaximo + jugador2.MedioAnchoMaximo) * 2;
@@ -64,6 +67,7 @@ namespace FgcTag.Nucleo.Combate
             FriccionRetroceso = friccionRetroceso;
             FramesBuferEntradas = framesBuferEntradas;
             Danio = danio;
+            Juggle = juggle;
             FramesPorRonda = framesPorRonda;
         }
     }

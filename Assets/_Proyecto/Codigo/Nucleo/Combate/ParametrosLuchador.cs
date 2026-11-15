@@ -30,14 +30,7 @@ namespace FgcTag.Nucleo.Combate
         public readonly ParametrosSalto Salto;
         public readonly MedidasCajaDanio MedidasDanio;
 
-        /// <summary>Ataque del botón Débil en tierra.</summary>
-        public readonly DatosMovimiento GolpeDebil;
-
-        /// <summary>Ataque del botón Medio en tierra.</summary>
-        public readonly DatosMovimiento GolpeMedio;
-
-        /// <summary>Ataque del botón Fuerte en tierra.</summary>
-        public readonly DatosMovimiento GolpeFuerte;
+        public readonly MovimientosLuchador Movimientos;
 
         public ParametrosLuchador(
             int vidaMaxima,
@@ -49,9 +42,7 @@ namespace FgcTag.Nucleo.Combate
             Fijo medioAltoEmpujeAire,
             ParametrosSalto salto,
             MedidasCajaDanio medidasDanio,
-            DatosMovimiento golpeDebil,
-            DatosMovimiento golpeMedio,
-            DatosMovimiento golpeFuerte)
+            MovimientosLuchador movimientos)
         {
             if (velocidadAdelante < Fijo.Cero || velocidadAtras < Fijo.Cero)
             {
@@ -78,26 +69,12 @@ namespace FgcTag.Nucleo.Combate
             MedioAltoEmpujeAire = medioAltoEmpujeAire;
             Salto = salto;
             MedidasDanio = medidasDanio;
-            GolpeDebil = golpeDebil;
-            GolpeMedio = golpeMedio;
-            GolpeFuerte = golpeFuerte;
+            Movimientos = movimientos;
         }
 
-        /// <summary>Frame data del ataque indicado.</summary>
-        public DatosMovimiento Movimiento(TipoAtaque ataque)
-        {
-            switch (ataque)
-            {
-                case TipoAtaque.Debil:
-                    return GolpeDebil;
-                case TipoAtaque.Medio:
-                    return GolpeMedio;
-                case TipoAtaque.Fuerte:
-                    return GolpeFuerte;
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(ataque), "No hay frame data para un ataque vacío.");
-            }
-        }
+        /// <summary>Frame data del ataque que el luchador está ejecutando, en tierra o en el aire.</summary>
+        public DatosMovimiento MovimientoEnCurso(in EstadoLuchador luchador) =>
+            Movimientos.Obtener(luchador.Ataque, luchador.Accion == AccionLuchador.AtacandoEnAire);
 
         /// <summary>Medio ancho más grande entre tierra y aire; el escenario debe caber dos de cada lado.</summary>
         public Fijo MedioAnchoMaximo => Fijo.Max(MedioAnchoEmpuje, MedioAnchoEmpujeAire);
@@ -105,7 +82,7 @@ namespace FgcTag.Nucleo.Combate
         /// <summary>Caja de empuje apoyada en los pies del luchador, según esté en el suelo o en el aire.</summary>
         public CajaColision CajaEmpuje(in EstadoLuchador luchador)
         {
-            var enAire = luchador.Accion == AccionLuchador.EnAire;
+            var enAire = EstadosAccion.EstaEnElAire(luchador.Accion);
             var medioAncho = enAire ? MedioAnchoEmpujeAire : MedioAnchoEmpuje;
             var medioAlto = enAire ? MedioAltoEmpujeAire : MedioAltoEmpuje;
             var centro = new VectorFijo(luchador.Posicion.X, luchador.Posicion.Y + medioAlto);
@@ -128,12 +105,12 @@ namespace FgcTag.Nucleo.Combate
         /// </summary>
         public CajaColision? CajaGolpeActiva(in EstadoLuchador luchador)
         {
-            if (luchador.Accion != AccionLuchador.Atacando)
+            if (!EstadosAccion.EstaAtacando(luchador.Accion))
             {
                 return null;
             }
 
-            var movimiento = Movimiento(luchador.Ataque);
+            var movimiento = MovimientoEnCurso(luchador);
 
             if (!movimiento.EstaActivo(luchador.FramesEnAccion))
             {
