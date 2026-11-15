@@ -22,6 +22,12 @@ namespace FgcTag.Nucleo.Combate
         /// <summary>Frames que el rival queda sin control al recibir el golpe, contados tras el hitstop.</summary>
         public readonly int Hitstun;
 
+        /// <summary>
+        /// Frames que un rival golpeado en el aire, o lanzado, pasa sin poder recuperarse. Se
+        /// acorta con cada golpe del combo; al agotarse, el rival se recupera en el aire.
+        /// </summary>
+        public readonly int HitstunAereo;
+
         /// <summary>Frames que el rival queda sin control al bloquear, contados tras el hitstop.</summary>
         public readonly int Blockstun;
 
@@ -49,11 +55,15 @@ namespace FgcTag.Nucleo.Combate
         /// <summary>Si conecta, se puede cancelar con un salto manteniendo arriba (para seguir al rival lanzado).</summary>
         public readonly bool CancelableConSalto;
 
+        /// <summary>Altura del golpe: decide si se bloquea de pie, agachado o de ambas formas.</summary>
+        public readonly AlturaGolpe Altura;
+
         public DatosMovimiento(
             int arranque,
             int activos,
             int recuperacion,
             int hitstun,
+            int hitstunAereo,
             int blockstun,
             int hitstop,
             int danio,
@@ -61,7 +71,8 @@ namespace FgcTag.Nucleo.Combate
             Fijo retrocesoAlBloquear,
             CajaColision cajaGolpe,
             Fijo velocidadLanzamiento = default,
-            bool cancelableConSalto = false)
+            bool cancelableConSalto = false,
+            AlturaGolpe altura = AlturaGolpe.Medio)
         {
             if (velocidadLanzamiento < Fijo.Cero)
             {
@@ -73,7 +84,7 @@ namespace FgcTag.Nucleo.Combate
                 throw new ArgumentOutOfRangeException(nameof(activos), "Un movimiento necesita al menos 1 frame activo y duraciones no negativas.");
             }
 
-            if (hitstun < 1 || blockstun < 1 || hitstop < 0)
+            if (hitstun < 1 || hitstunAereo < 1 || blockstun < 1 || hitstop < 0)
             {
                 throw new ArgumentOutOfRangeException(nameof(hitstun), "Hitstun y blockstun duran al menos 1 frame y el hitstop no puede ser negativo.");
             }
@@ -92,6 +103,7 @@ namespace FgcTag.Nucleo.Combate
             Activos = activos;
             Recuperacion = recuperacion;
             Hitstun = hitstun;
+            HitstunAereo = hitstunAereo;
             Blockstun = blockstun;
             Hitstop = hitstop;
             Danio = danio;
@@ -100,6 +112,7 @@ namespace FgcTag.Nucleo.Combate
             CajaGolpe = cajaGolpe;
             VelocidadLanzamiento = velocidadLanzamiento;
             CancelableConSalto = cancelableConSalto;
+            Altura = altura;
         }
 
         /// <summary>El golpe levanta del suelo al rival en lugar de dejarlo en hitstun.</summary>

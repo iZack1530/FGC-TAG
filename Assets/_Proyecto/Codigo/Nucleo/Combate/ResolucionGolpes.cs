@@ -56,7 +56,7 @@ namespace FgcTag.Nucleo.Combate
         /// <summary>El atacante anota que su golpe conectó, y si el rival lo bloqueó, y entra en hitstop.</summary>
         private static EstadoLuchador MarcarContacto(in EstadoLuchador atacante, in DatosMovimiento movimiento, in EstadoLuchador defensorTrasElGolpe)
         {
-            var marcado = defensorTrasElGolpe.Accion == AccionLuchador.Blockstun
+            var marcado = EstadosAccion.EstaBloqueando(defensorTrasElGolpe.Accion)
                 ? atacante.ConGolpeBloqueado()
                 : atacante.ConGolpeConectado(true);
 
@@ -64,9 +64,10 @@ namespace FgcTag.Nucleo.Combate
         }
 
         /// <summary>
-        /// Se bloquea manteniendo la dirección que aleja del atacante, con control en tierra o
-        /// durante otro blockstun; en el aire no se puede bloquear. Un golpe que no se bloquea deja
-        /// al rival en hitstun, o en el aire si ya estaba allí o si el golpe es un lanzador.
+        /// Se bloquea manteniendo la dirección que aleja del atacante. En tierra la guardia debe
+        /// corresponder a la altura del golpe: los bajos se bloquean agachado y los altos de pie.
+        /// En el aire se bloquea cualquier golpe durante un salto libre. Un golpe que no se bloquea
+        /// deja al rival en hitstun, o en el aire si ya estaba allí o si el golpe es un lanzador.
         /// </summary>
         private static EstadoLuchador RecibirGolpe(
             in EstadoLuchador defensor,
@@ -82,9 +83,23 @@ namespace FgcTag.Nucleo.Combate
             var enAire = EstadosAccion.EstaEnElAire(defensor.Accion);
             var congelado = defensor.ConHitstop(movimiento.Hitstop).ConGolpeConectado(false).ConAtaque(TipoAtaque.Ninguno);
 
+            var mantieneAtras = InterpretacionEntradas.DireccionHorizontal(botonesDefensor) == sentidoRetroceso;
+            var guardiaAgachada = InterpretacionEntradas.DireccionVertical(botonesDefensor) < 0;
+
+            if (mantieneAtras && EstadosAccion.PuedeBloquearEnAire(defensor.Accion))
+            {
+                return congelado
+                    .ConVida(VidaTrasBloqueo(defensor, configuracion.Danio.AlBloquear(movimiento.Danio)))
+                    .ConGolpesEnCombo(0)
+                    .ConVelocidad(new VectorFijo(movimiento.RetrocesoAlBloquear * sentidoRetroceso, defensor.Velocidad.Y))
+                    .ConAccionNueva(AccionLuchador.BloqueandoEnAire)
+                    .ConAturdimiento(movimiento.Blockstun);
+            }
+
             var bloquea = !enAire &&
+                mantieneAtras &&
                 EstadosAccion.PuedeBloquear(defensor.Accion) &&
-                InterpretacionEntradas.DireccionHorizontal(botonesDefensor) == sentidoRetroceso;
+                Guardia.Detiene(movimiento.Altura, guardiaAgachada);
 
             if (bloquea)
             {
@@ -107,6 +122,7 @@ namespace FgcTag.Nucleo.Combate
 
                 return golpeado
                     .ConVelocidad(new VectorFijo(retroceso, impulso))
+                    .ConAturdimiento(configuracion.Juggle.AturdimientoCon(movimiento.HitstunAereo, golpesEnCombo))
                     .ConAccionNueva(AccionLuchador.GolpeadoEnAire);
             }
 

@@ -2,7 +2,7 @@ using System;
 
 namespace FgcTag.Nucleo.Combate
 {
-    /// <summary>Frame data de todos los ataques normales de un luchador, en tierra y en el aire.</summary>
+    /// <summary>Frame data de todos los ataques normales de un luchador: de pie, agachado y en el aire.</summary>
     public readonly struct MovimientosLuchador
     {
         public readonly DatosMovimiento Debil;
@@ -11,6 +11,10 @@ namespace FgcTag.Nucleo.Combate
 
         /// <summary>Ataque del botón Especial en tierra: lanza al rival al aire.</summary>
         public readonly DatosMovimiento Lanzador;
+
+        public readonly DatosMovimiento DebilAgachado;
+        public readonly DatosMovimiento MedioAgachado;
+        public readonly DatosMovimiento FuerteAgachado;
 
         public readonly DatosMovimiento DebilAereo;
         public readonly DatosMovimiento MedioAereo;
@@ -21,6 +25,9 @@ namespace FgcTag.Nucleo.Combate
             DatosMovimiento medio,
             DatosMovimiento fuerte,
             DatosMovimiento lanzador,
+            DatosMovimiento debilAgachado,
+            DatosMovimiento medioAgachado,
+            DatosMovimiento fuerteAgachado,
             DatosMovimiento debilAereo,
             DatosMovimiento medioAereo,
             DatosMovimiento fuerteAereo)
@@ -29,6 +36,9 @@ namespace FgcTag.Nucleo.Combate
             Medio = medio;
             Fuerte = fuerte;
             Lanzador = lanzador;
+            DebilAgachado = debilAgachado;
+            MedioAgachado = medioAgachado;
+            FuerteAgachado = fuerteAgachado;
             DebilAereo = debilAereo;
             MedioAereo = medioAereo;
             FuerteAereo = fuerteAereo;
@@ -38,20 +48,34 @@ namespace FgcTag.Nucleo.Combate
         public static bool TieneVersionAerea(TipoAtaque ataque) =>
             ataque == TipoAtaque.Debil || ataque == TipoAtaque.Medio || ataque == TipoAtaque.Fuerte;
 
-        public DatosMovimiento Obtener(TipoAtaque ataque, bool enAire)
+        /// <summary>El lanzador es el mismo de pie y agachado.</summary>
+        public DatosMovimiento Obtener(TipoAtaque ataque, PosturaAtaque postura)
         {
             switch (ataque)
             {
                 case TipoAtaque.Debil:
-                    return enAire ? DebilAereo : Debil;
+                    return Elegir(postura, Debil, DebilAgachado, DebilAereo);
                 case TipoAtaque.Medio:
-                    return enAire ? MedioAereo : Medio;
+                    return Elegir(postura, Medio, MedioAgachado, MedioAereo);
                 case TipoAtaque.Fuerte:
-                    return enAire ? FuerteAereo : Fuerte;
-                case TipoAtaque.Especial when !enAire:
+                    return Elegir(postura, Fuerte, FuerteAgachado, FuerteAereo);
+                case TipoAtaque.Especial when postura != PosturaAtaque.Aire:
                     return Lanzador;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(ataque), "No hay frame data para ese ataque en esa situación.");
+            }
+        }
+
+        private static DatosMovimiento Elegir(PosturaAtaque postura, in DatosMovimiento dePie, in DatosMovimiento agachado, in DatosMovimiento aereo)
+        {
+            switch (postura)
+            {
+                case PosturaAtaque.Agachado:
+                    return agachado;
+                case PosturaAtaque.Aire:
+                    return aereo;
+                default:
+                    return dePie;
             }
         }
     }

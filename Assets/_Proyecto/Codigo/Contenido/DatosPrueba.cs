@@ -8,7 +8,8 @@ namespace FgcTag.Contenido
     /// Valores del prototipo con cajas grises (fase 1). Unidades en metros y velocidades por frame
     /// de 60 Hz: 0.06 m/frame equivale a 3.6 m/s. El salto sube unos 2.3 m y dura 43 frames,
     /// en el rango de Guilty Gear y Dragon Ball FighterZ; la caja de tierra mide 1.8 m, así que en
-    /// lo alto del salto se puede pasar por encima del rival.
+    /// lo alto del salto se puede pasar por encima del rival. El supersalto (saltar hasta 8 frames
+    /// después de haber estado agachado) sube unos 4.6 m y dura 61 frames.
     /// </summary>
     public static class DatosPrueba
     {
@@ -18,7 +19,9 @@ namespace FgcTag.Contenido
             velocidadVertical: Fijo.DesdeFraccion(21, 100),
             gravedad: Fijo.DesdeFraccion(1, 100),
             velocidadAdelante: Fijo.DesdeFraccion(7, 100),
-            velocidadAtras: Fijo.DesdeFraccion(6, 100));
+            velocidadAtras: Fijo.DesdeFraccion(6, 100),
+            velocidadVerticalSupersalto: Fijo.DesdeFraccion(30, 100),
+            ventanaSupersalto: 8);
 
         /// <summary>
         /// Golpe débil de pie: golpea en el frame 5, dura 16 frames, +3 al golpear y -1 al
@@ -29,6 +32,7 @@ namespace FgcTag.Contenido
             activos: 3,
             recuperacion: 9,
             hitstun: 14,
+            hitstunAereo: 18,
             blockstun: 10,
             hitstop: 8,
             danio: 300,
@@ -48,6 +52,7 @@ namespace FgcTag.Contenido
             activos: 3,
             recuperacion: 14,
             hitstun: 17,
+            hitstunAereo: 20,
             blockstun: 13,
             hitstop: 10,
             danio: 600,
@@ -67,6 +72,7 @@ namespace FgcTag.Contenido
             activos: 4,
             recuperacion: 20,
             hitstun: 21,
+            hitstunAereo: 22,
             blockstun: 16,
             hitstop: 12,
             danio: 900,
@@ -76,6 +82,60 @@ namespace FgcTag.Contenido
                 new VectorFijo(Fijo.DesdeFraccion(105, 100), Fijo.DesdeFraccion(100, 100)),
                 Fijo.DesdeFraccion(80, 100),
                 Fijo.DesdeFraccion(30, 100)));
+
+        /// <summary>Débil agachado: golpe bajo; golpea en el frame 6, dura 17 frames, +2 al golpear y -1 al bloquear.</summary>
+        public static readonly DatosMovimiento GolpeDebilAgachadoCajaGris = new DatosMovimiento(
+            arranque: 5,
+            activos: 3,
+            recuperacion: 9,
+            hitstun: 13,
+            hitstunAereo: 18,
+            blockstun: 10,
+            hitstop: 8,
+            danio: 250,
+            retrocesoAlGolpear: Fijo.DesdeFraccion(6, 100),
+            retrocesoAlBloquear: Fijo.DesdeFraccion(8, 100),
+            cajaGolpe: new CajaColision(
+                new VectorFijo(Fijo.DesdeFraccion(70, 100), Fijo.DesdeFraccion(35, 100)),
+                Fijo.DesdeFraccion(45, 100),
+                Fijo.DesdeFraccion(20, 100)),
+            altura: AlturaGolpe.Bajo);
+
+        /// <summary>Medio agachado: golpe bajo de más alcance; golpea en el frame 8, dura 25 frames, 0 al golpear y -4 al bloquear.</summary>
+        public static readonly DatosMovimiento GolpeMedioAgachadoCajaGris = new DatosMovimiento(
+            arranque: 7,
+            activos: 3,
+            recuperacion: 15,
+            hitstun: 17,
+            hitstunAereo: 20,
+            blockstun: 13,
+            hitstop: 10,
+            danio: 550,
+            retrocesoAlGolpear: Fijo.DesdeFraccion(7, 100),
+            retrocesoAlBloquear: Fijo.DesdeFraccion(10, 100),
+            cajaGolpe: new CajaColision(
+                new VectorFijo(Fijo.DesdeFraccion(90, 100), Fijo.DesdeFraccion(30, 100)),
+                Fijo.DesdeFraccion(65, 100),
+                Fijo.DesdeFraccion(22, 100)),
+            altura: AlturaGolpe.Bajo);
+
+        /// <summary>Fuerte agachado: el golpe bajo de más alcance; golpea en el frame 11, dura 36 frames, -4 al golpear y -9 al bloquear.</summary>
+        public static readonly DatosMovimiento GolpeFuerteAgachadoCajaGris = new DatosMovimiento(
+            arranque: 10,
+            activos: 4,
+            recuperacion: 22,
+            hitstun: 21,
+            hitstunAereo: 22,
+            blockstun: 16,
+            hitstop: 12,
+            danio: 850,
+            retrocesoAlGolpear: Fijo.DesdeFraccion(8, 100),
+            retrocesoAlBloquear: Fijo.DesdeFraccion(12, 100),
+            cajaGolpe: new CajaColision(
+                new VectorFijo(Fijo.DesdeFraccion(105, 100), Fijo.DesdeFraccion(30, 100)),
+                Fijo.DesdeFraccion(80, 100),
+                Fijo.DesdeFraccion(25, 100)),
+            altura: AlturaGolpe.Bajo);
 
         /// <summary>
         /// Lanzador (botón Especial): golpea en el frame 9, dura 34 frames y es muy castigable si
@@ -87,6 +147,7 @@ namespace FgcTag.Contenido
             activos: 4,
             recuperacion: 22,
             hitstun: 20,
+            hitstunAereo: 30,
             blockstun: 15,
             hitstop: 12,
             danio: 800,
@@ -105,6 +166,7 @@ namespace FgcTag.Contenido
             activos: 4,
             recuperacion: 8,
             hitstun: 14,
+            hitstunAereo: 22,
             blockstun: 10,
             hitstop: 8,
             danio: 300,
@@ -113,7 +175,8 @@ namespace FgcTag.Contenido
             cajaGolpe: new CajaColision(
                 new VectorFijo(Fijo.DesdeFraccion(55, 100), Fijo.DesdeFraccion(60, 100)),
                 Fijo.DesdeFraccion(50, 100),
-                Fijo.DesdeFraccion(55, 100)));
+                Fijo.DesdeFraccion(55, 100)),
+            altura: AlturaGolpe.Alto);
 
         /// <summary>Medio aéreo: golpea en el frame 8 y dura 23 frames.</summary>
         public static readonly DatosMovimiento GolpeMedioAereoCajaGris = new DatosMovimiento(
@@ -121,6 +184,7 @@ namespace FgcTag.Contenido
             activos: 4,
             recuperacion: 12,
             hitstun: 17,
+            hitstunAereo: 24,
             blockstun: 13,
             hitstop: 10,
             danio: 550,
@@ -129,7 +193,8 @@ namespace FgcTag.Contenido
             cajaGolpe: new CajaColision(
                 new VectorFijo(Fijo.DesdeFraccion(65, 100), Fijo.DesdeFraccion(55, 100)),
                 Fijo.DesdeFraccion(60, 100),
-                Fijo.DesdeFraccion(60, 100)));
+                Fijo.DesdeFraccion(60, 100)),
+            altura: AlturaGolpe.Alto);
 
         /// <summary>Fuerte aéreo: golpea en el frame 10 y dura 30 frames.</summary>
         public static readonly DatosMovimiento GolpeFuerteAereoCajaGris = new DatosMovimiento(
@@ -137,6 +202,7 @@ namespace FgcTag.Contenido
             activos: 5,
             recuperacion: 16,
             hitstun: 21,
+            hitstunAereo: 26,
             blockstun: 16,
             hitstop: 12,
             danio: 800,
@@ -145,17 +211,24 @@ namespace FgcTag.Contenido
             cajaGolpe: new CajaColision(
                 new VectorFijo(Fijo.DesdeFraccion(75, 100), Fijo.DesdeFraccion(50, 100)),
                 Fijo.DesdeFraccion(70, 100),
-                Fijo.DesdeFraccion(70, 100)));
+                Fijo.DesdeFraccion(70, 100)),
+            altura: AlturaGolpe.Alto);
 
         /// <summary>
         /// Un rival golpeado en el aire rebota hacia arriba con 0.10 por frame; cae con gravedad
         /// 0.012 más 0.0015 por cada golpe del combo, y al tocar el suelo queda 40 frames derribado.
+        /// El aturdimiento aéreo de cada golpe dura 2 frames menos por golpe del combo (mínimo 12);
+        /// al agotarse, el rival se recupera en el aire con un pequeño salto.
         /// </summary>
         public static readonly ReglasJuggle JuggleCajasGrises = new ReglasJuggle(
             impulsoAlGolpear: Fijo.DesdeFraccion(10, 100),
             gravedad: Fijo.DesdeFraccion(12, 1000),
             gravedadExtraPorGolpe: Fijo.DesdeFraccion(15, 10000),
-            framesDerribado: 40);
+            framesDerribado: 40,
+            reduccionAturdimientoPorGolpe: 2,
+            aturdimientoMinimo: 12,
+            velocidadRecuperacion: Fijo.DesdeFraccion(5, 100),
+            impulsoRecuperacion: Fijo.DesdeFraccion(12, 100));
 
         public static readonly MedidasCajaDanio CajaDanioCajaGris = new MedidasCajaDanio(
             medioAncho: Fijo.DesdeFraccion(4, 10),
@@ -187,6 +260,9 @@ namespace FgcTag.Contenido
                 medio: GolpeMedioCajaGris,
                 fuerte: GolpeFuerteCajaGris,
                 lanzador: LanzadorCajaGris,
+                debilAgachado: GolpeDebilAgachadoCajaGris,
+                medioAgachado: GolpeMedioAgachadoCajaGris,
+                fuerteAgachado: GolpeFuerteAgachadoCajaGris,
                 debilAereo: GolpeDebilAereoCajaGris,
                 medioAereo: GolpeMedioAereoCajaGris,
                 fuerteAereo: GolpeFuerteAereoCajaGris));

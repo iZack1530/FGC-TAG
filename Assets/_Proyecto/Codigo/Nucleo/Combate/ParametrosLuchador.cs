@@ -72,9 +72,9 @@ namespace FgcTag.Nucleo.Combate
             Movimientos = movimientos;
         }
 
-        /// <summary>Frame data del ataque que el luchador está ejecutando, en tierra o en el aire.</summary>
+        /// <summary>Frame data del ataque que el luchador está ejecutando, según su postura.</summary>
         public DatosMovimiento MovimientoEnCurso(in EstadoLuchador luchador) =>
-            Movimientos.Obtener(luchador.Ataque, luchador.Accion == AccionLuchador.AtacandoEnAire);
+            Movimientos.Obtener(luchador.Ataque, EstadosAccion.PosturaDeAtaque(luchador.Accion));
 
         /// <summary>Medio ancho más grande entre tierra y aire; el escenario debe caber dos de cada lado.</summary>
         public Fijo MedioAnchoMaximo => Fijo.Max(MedioAnchoEmpuje, MedioAnchoEmpujeAire);

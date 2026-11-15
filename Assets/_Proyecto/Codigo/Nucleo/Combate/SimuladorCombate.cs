@@ -95,9 +95,21 @@ namespace FgcTag.Nucleo.Combate
 
             var avanzado = conBufer.EnHitstop
                 ? conBufer.ConHitstop(conBufer.FramesHitstop - 1)
-                : Actuar(conBufer, botones, parametros, configuracion);
+                : ContarFramesDesdeAgachado(Actuar(conBufer, botones, parametros, configuracion));
 
             return avanzado.ConBotonesAnteriores(botones);
+        }
+
+        private static EstadoLuchador ContarFramesDesdeAgachado(in EstadoLuchador luchador)
+        {
+            if (luchador.Accion == AccionLuchador.Agachado)
+            {
+                return luchador.ConFramesDesdeAgachado(0);
+            }
+
+            return luchador.FramesDesdeAgachado >= EstadoLuchador.MaximoFramesDesdeAgachado
+                ? luchador
+                : luchador.ConFramesDesdeAgachado(luchador.FramesDesdeAgachado + 1);
         }
 
         /// <summary>
@@ -123,7 +135,17 @@ namespace FgcTag.Nucleo.Combate
                 : luchador.ConBufer(luchador.AtaqueEnBufer, luchador.FramesBufer - 1);
         }
 
-        /// <param name="accion"><see cref="AccionLuchador.Atacando"/> en tierra o <see cref="AccionLuchador.AtacandoEnAire"/> en el aire.</param>
+        /// <summary>
+        /// En tierra, un ataque sale agachado si el jugador mantiene abajo en el frame en que
+        /// empieza. El lanzador es el mismo de pie y agachado.
+        /// </summary>
+        private static EstadoLuchador IniciarAtaqueEnTierra(in EstadoLuchador luchador, BotonesEntrada botones)
+        {
+            var agachado = luchador.AtaqueEnBufer != TipoAtaque.Especial && InterpretacionEntradas.DireccionVertical(botones) < 0;
+
+            return IniciarAtaque(luchador, agachado ? AccionLuchador.AtacandoAgachado : AccionLuchador.Atacando);
+        }
+
         private static EstadoLuchador IniciarAtaque(in EstadoLuchador luchador, AccionLuchador accion) =>
             luchador
                 .ConAccionNueva(accion)
@@ -172,7 +194,7 @@ namespace FgcTag.Nucleo.Combate
         {
             if (PuedeCancelar(luchador))
             {
-                return IniciarAtaque(luchador, AccionLuchador.Atacando);
+                return IniciarAtaqueEnTierra(luchador, botones);
             }
 
             var movimiento = parametros.MovimientoEnCurso(luchador);
@@ -181,12 +203,12 @@ namespace FgcTag.Nucleo.Combate
 
             if (golpeoSinBloqueo && movimiento.CancelableConSalto && InterpretacionEntradas.DireccionVertical(botones) > 0)
             {
-                return SinAtaque(luchador).ConAccionNueva(AccionLuchador.PreSalto);
+                return SinAtaque(luchador).ConAccionNueva(AccionLuchador.PreSalto).ConSupersalto(false);
             }
 
             return luchador.FramesEnAccion + 1 >= movimiento.DuracionTotal
                 ? ControlarEnTierra(SinAtaque(luchador), botones, parametros)
-                : luchador.ConAccion(AccionLuchador.Atacando);
+                : luchador.ConAccion(luchador.Accion);
         }
 
         private static EstadoLuchador Actuar(
@@ -198,6 +220,7 @@ namespace FgcTag.Nucleo.Combate
             switch (luchador.Accion)
             {
                 case AccionLuchador.Atacando:
+                case AccionLuchador.AtacandoAgachado:
                     return ContinuarAtaqueEnTierra(luchador, botones, parametros);
 
                 case AccionLuchador.Hitstun:
@@ -214,9 +237,22 @@ namespace FgcTag.Nucleo.Combate
                     return MoverEnAire(DecidirAccionAerea(luchador, parametros), parametros.Salto.Gravedad, parametros.Salto.FramesAterrizaje);
 
                 case AccionLuchador.GolpeadoEnAire:
+                    if (luchador.FramesAturdimiento <= 0 && !luchador.SinVida)
+                    {
+                        return MoverEnAire(RecuperarEnAire(luchador, botones, configuracion.Juggle), parametros.Salto.Gravedad, parametros.Salto.FramesAterrizaje);
+                    }
+
                     return MoverEnAire(
-                        luchador.ConAccion(AccionLuchador.GolpeadoEnAire),
+                        luchador.ConAccion(AccionLuchador.GolpeadoEnAire).ConAturdimiento(luchador.FramesAturdimiento > 0 ? luchador.FramesAturdimiento - 1 : 0),
                         configuracion.Juggle.GravedadCon(luchador.GolpesEnCombo),
+                        parametros.Salto.FramesAterrizaje);
+
+                case AccionLuchador.BloqueandoEnAire:
+                    return MoverEnAire(
+                        luchador.FramesAturdimiento <= 0
+                            ? luchador.ConAccionNueva(AccionLuchador.EnAire)
+                            : luchador.ConAccion(AccionLuchador.BloqueandoEnAire).ConAturdimiento(luchador.FramesAturdimiento - 1),
+                        parametros.Salto.Gravedad,
                         parametros.Salto.FramesAterrizaje);
 
                 case AccionLuchador.Derribado:
@@ -243,14 +279,17 @@ namespace FgcTag.Nucleo.Combate
         {
             if (luchador.TieneAtaqueEnBufer)
             {
-                return IniciarAtaque(luchador, AccionLuchador.Atacando);
+                return IniciarAtaqueEnTierra(luchador, botones);
             }
 
             var vertical = InterpretacionEntradas.DireccionVertical(botones);
 
             if (vertical > 0)
             {
-                return luchador.ConAccion(AccionLuchador.PreSalto);
+                var vieneDeAgacharse = luchador.Accion == AccionLuchador.Agachado ||
+                    luchador.FramesDesdeAgachado <= parametros.Salto.VentanaSupersalto;
+
+                return luchador.ConAccion(AccionLuchador.PreSalto).ConSupersalto(vieneDeAgacharse);
             }
 
             if (vertical < 0)
@@ -272,6 +311,20 @@ namespace FgcTag.Nucleo.Combate
             return luchador
                 .ConAccion(accion)
                 .ConX(luchador.Posicion.X + velocidad * direccion);
+        }
+
+        /// <summary>
+        /// Recuperación en el aire: al agotarse el aturdimiento, el luchador recobra el control con
+        /// un pequeño salto hacia la dirección que mantenga, y el combo termina.
+        /// </summary>
+        private static EstadoLuchador RecuperarEnAire(in EstadoLuchador luchador, BotonesEntrada botones, in ReglasJuggle juggle)
+        {
+            var direccion = InterpretacionEntradas.DireccionHorizontal(botones);
+
+            return luchador
+                .ConAccionNueva(AccionLuchador.EnAire)
+                .ConGolpesEnCombo(0)
+                .ConVelocidad(new VectorFijo(juggle.VelocidadRecuperacion * direccion, juggle.ImpulsoRecuperacion));
         }
 
         /// <summary>Un frame sin control en el suelo: el luchador se desliza con su velocidad de retroceso y la fricción la frena.</summary>
@@ -299,7 +352,7 @@ namespace FgcTag.Nucleo.Combate
 
             return luchador
                 .ConAccionNueva(AccionLuchador.EnAire)
-                .ConVelocidad(new VectorFijo(velocidadHorizontal, salto.VelocidadVertical));
+                .ConVelocidad(new VectorFijo(velocidadHorizontal, luchador.Supersalto ? salto.VelocidadVerticalSupersalto : salto.VelocidadVertical));
         }
 
         /// <summary>
@@ -333,7 +386,7 @@ namespace FgcTag.Nucleo.Combate
                     .ConAccionNueva(AccionLuchador.Noqueado);
             }
 
-            var enReposo = SinAtaque(luchador).ConVelocidad(VectorFijo.Cero);
+            var enReposo = SinAtaque(luchador).ConVelocidad(VectorFijo.Cero).ConAturdimiento(0).ConSupersalto(false);
 
             if (luchador.Accion == AccionLuchador.GolpeadoEnAire)
             {
