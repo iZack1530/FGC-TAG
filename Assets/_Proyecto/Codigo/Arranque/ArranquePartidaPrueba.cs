@@ -75,15 +75,19 @@ namespace FgcTag.Arranque
                 return;
             }
 
-            GUILayout.BeginArea(new Rect(12, 12, 720, 90), GUI.skin.box);
+            GUILayout.BeginArea(new Rect(12, 12, 860, 115), GUI.skin.box);
             GUILayout.Label($"Frame {_estado.Frame}   Suma {_estado.CalcularSumaVerificacion()}");
             GUILayout.Label(DescribirLuchador("J1", _estado.Luchador1));
             GUILayout.Label(DescribirLuchador("J2", _estado.Luchador2));
+            GUILayout.Label(DescribirMovimiento("Golpe débil", _configuracion.Jugador1.GolpeDebil));
             GUILayout.EndArea();
         }
 
         private static string DescribirLuchador(string etiqueta, in EstadoLuchador luchador) =>
-            $"{etiqueta}: pos {luchador.Posicion}   vel {luchador.Velocidad}   {luchador.Accion} ({luchador.FramesEnAccion} f)   mira {(luchador.MiraDerecha ? "derecha" : "izquierda")}";
+            $"{etiqueta}: pos {luchador.Posicion}   vel {luchador.Velocidad}   {luchador.Accion} ({luchador.FramesEnAccion} f)   hitstop {luchador.FramesHitstop}   aturdido {luchador.FramesAturdimiento}   mira {(luchador.MiraDerecha ? "derecha" : "izquierda")}";
+
+        private static string DescribirMovimiento(string nombre, in DatosMovimiento movimiento) =>
+            $"{nombre}: arranque {movimiento.Arranque}   activos {movimiento.Activos}   recuperación {movimiento.Recuperacion}   hitstop {movimiento.Hitstop}   ventaja {movimiento.VentajaAlGolpear:+0;-0;0} al golpear, {movimiento.VentajaAlBloquear:+0;-0;0} al bloquear";
 
         private static void ColocarCamara()
         {

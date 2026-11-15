@@ -5,7 +5,9 @@ namespace FgcTag.Presentacion
 {
     /// <summary>
     /// Representación provisional de la fase 1: cada luchador es su caja de empuje real (la misma
-    /// que usa la simulación), con una «nariz» que indica hacia dónde mira. Solo lee el estado.
+    /// que usa la simulación), con una «nariz» que indica hacia dónde mira. La caja de golpe se
+    /// dibuja en rojo durante los frames activos y, mientras dura el hitstop, el atacante se pinta
+    /// de blanco y el golpeado de negro: la versión mínima del impact frame. Solo lee el estado.
     /// </summary>
     public sealed class VistaCajasPrueba
     {
@@ -15,6 +17,9 @@ namespace FgcTag.Presentacion
         private static readonly Color ColorJugador1 = new Color(0.25f, 0.55f, 0.95f);
         private static readonly Color ColorJugador2 = new Color(0.95f, 0.35f, 0.3f);
         private static readonly Color ColorPiso = new Color(0.35f, 0.35f, 0.38f);
+        private static readonly Color ColorCajaGolpe = new Color(1f, 0.15f, 0.1f);
+        private static readonly Color ColorImpactoAtacante = new Color(1f, 1f, 1f);
+        private static readonly Color ColorImpactoGolpeado = new Color(0.05f, 0.05f, 0.05f);
 
         private readonly GameObject _raiz;
         private readonly Material _materialPiso;
@@ -39,8 +44,8 @@ namespace FgcTag.Presentacion
 
         public void Destruir()
         {
-            _luchador1.DestruirMaterial();
-            _luchador2.DestruirMaterial();
+            _luchador1.DestruirMateriales();
+            _luchador2.DestruirMateriales();
             Object.Destroy(_materialPiso);
             Object.Destroy(_raiz);
         }
@@ -69,11 +74,15 @@ namespace FgcTag.Presentacion
             private readonly Transform _raiz;
             private readonly Transform _cuerpo;
             private readonly Transform _nariz;
+            private readonly GameObject _cajaGolpe;
             private readonly Material _material;
+            private readonly Material _materialCajaGolpe;
+            private readonly Color _color;
 
             public LuchadorVisual(string nombre, Transform padre, in ParametrosLuchador parametros, Color color)
             {
                 _parametros = parametros;
+                _color = color;
 
                 _raiz = new GameObject(nombre).transform;
                 _raiz.SetParent(padre, false);
@@ -92,6 +101,13 @@ namespace FgcTag.Presentacion
                 _nariz.SetParent(_raiz, false);
                 _nariz.localScale = Vector3.one * TamanoNariz;
                 nariz.GetComponent<Renderer>().sharedMaterial = _material;
+
+                _cajaGolpe = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                _cajaGolpe.name = nombre + "CajaGolpe";
+                _cajaGolpe.transform.SetParent(padre, false);
+                _materialCajaGolpe = _cajaGolpe.GetComponent<Renderer>().material;
+                _materialCajaGolpe.color = ColorCajaGolpe;
+                _cajaGolpe.SetActive(false);
             }
 
             public void Mostrar(in EstadoLuchador estado)
@@ -106,9 +122,45 @@ namespace FgcTag.Presentacion
                 _cuerpo.localPosition = new Vector3(0f, alto / 2f, 0f);
                 _cuerpo.localScale = new Vector3(ancho, alto, GrosorProfundidad);
                 _nariz.localPosition = new Vector3(ancho / 2f + TamanoNariz / 2f, alto * 0.8f, 0f);
+
+                _material.color = ColorSegunImpacto(estado);
+                MostrarCajaGolpe(estado);
             }
 
-            public void DestruirMaterial() => Object.Destroy(_material);
+            public void DestruirMateriales()
+            {
+                Object.Destroy(_material);
+                Object.Destroy(_materialCajaGolpe);
+            }
+
+            private Color ColorSegunImpacto(in EstadoLuchador estado)
+            {
+                if (!estado.EnHitstop)
+                {
+                    return _color;
+                }
+
+                return estado.Accion == AccionLuchador.Atacando ? ColorImpactoAtacante : ColorImpactoGolpeado;
+            }
+
+            /// <summary>La caja de golpe ya viene en coordenadas de escenario, por eso no cuelga del luchador.</summary>
+            private void MostrarCajaGolpe(in EstadoLuchador estado)
+            {
+                var caja = _parametros.CajaGolpeActiva(estado);
+                _cajaGolpe.SetActive(caja.HasValue);
+
+                if (!caja.HasValue)
+                {
+                    return;
+                }
+
+                var centro = caja.Value.Centro;
+                _cajaGolpe.transform.localPosition = new Vector3(centro.X.AFlotante(), centro.Y.AFlotante(), -GrosorProfundidad / 2f);
+                _cajaGolpe.transform.localScale = new Vector3(
+                    caja.Value.MedioAncho.AFlotante() * 2f,
+                    caja.Value.MedioAlto.AFlotante() * 2f,
+                    GrosorProfundidad / 2f);
+            }
 
             /// <summary>
             /// Pista visual de la pose (agacharse, cargar el salto, amortiguar la caída). Solo
