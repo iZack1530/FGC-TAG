@@ -25,6 +25,33 @@ namespace FgcTag.Pruebas.Nucleo
             retrocesoAlBloquear: Fijo.DesdeFraccion(1, 16),
             cajaGolpe: new CajaColision(VectorFijo.DesdeEnteros(1, 1), Fijo.Medio, Fijo.DesdeFraccion(1, 4)));
 
+        /// <summary>Dura 23 frames y golpea en el frame 7. Ventaja: +1 al golpear y -3 al bloquear. Alcance: 2.5 unidades.</summary>
+        public static readonly DatosMovimiento GolpeMedio = new DatosMovimiento(
+            arranque: 6,
+            activos: 3,
+            recuperacion: 14,
+            hitstun: 17,
+            blockstun: 13,
+            hitstop: 10,
+            retrocesoAlGolpear: Fijo.DesdeFraccion(1, 8),
+            retrocesoAlBloquear: Fijo.DesdeFraccion(1, 16),
+            cajaGolpe: new CajaColision(VectorFijo.DesdeEnteros(1, 1), Fijo.Uno, Fijo.DesdeFraccion(1, 4)));
+
+        /// <summary>Dura 33 frames y golpea en el frame 10. Ventaja: -2 al golpear y -7 al bloquear. Alcance: 3.5 unidades.</summary>
+        public static readonly DatosMovimiento GolpeFuerte = new DatosMovimiento(
+            arranque: 9,
+            activos: 4,
+            recuperacion: 20,
+            hitstun: 21,
+            blockstun: 16,
+            hitstop: 12,
+            retrocesoAlGolpear: Fijo.DesdeFraccion(1, 8),
+            retrocesoAlBloquear: Fijo.DesdeFraccion(1, 16),
+            cajaGolpe: new CajaColision(new VectorFijo(Fijo.DesdeFraccion(3, 2), Fijo.Uno), Fijo.DesdeFraccion(3, 2), Fijo.DesdeFraccion(1, 4)));
+
+        /// <summary>Un ataque pulsado se recuerda 5 frames, contando el de la pulsación.</summary>
+        public const int FramesBufer = 5;
+
         public static readonly ParametrosLuchador Parametros = new ParametrosLuchador(
             velocidadAdelante: Fijo.DesdeFraccion(1, 4),
             velocidadAtras: Fijo.DesdeFraccion(1, 8),
@@ -44,14 +71,17 @@ namespace FgcTag.Pruebas.Nucleo
                 medioAltoDePie: Fijo.Uno,
                 medioAltoAgachado: Fijo.Medio,
                 medioAltoAire: Fijo.Medio),
-            golpeDebil: GolpeDebil);
+            golpeDebil: GolpeDebil,
+            golpeMedio: GolpeMedio,
+            golpeFuerte: GolpeFuerte);
 
         public static readonly ConfiguracionCombate Configuracion = new ConfiguracionCombate(
             Parametros,
             Parametros,
             Fijo.DesdeEntero(-10),
             Fijo.DesdeEntero(10),
-            friccionRetroceso: Fijo.DesdeFraccion(1, 64));
+            friccionRetroceso: Fijo.DesdeFraccion(1, 64),
+            framesBuferEntradas: FramesBufer);
 
         public static EstadoPartida Inicial(int x1, int x2) =>
             EstadoPartida.Crear(VectorFijo.DesdeEnteros(x1, 0), VectorFijo.DesdeEnteros(x2, 0));

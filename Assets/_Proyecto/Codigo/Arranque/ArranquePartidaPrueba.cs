@@ -111,17 +111,25 @@ namespace FgcTag.Arranque
 
             var modo = _pausado ? "EN PAUSA (F2 avanza un frame, F1 reanuda)" : "F1 pausa";
 
-            GUILayout.BeginArea(new Rect(12, 12, Screen.width - 24, 190), GUI.skin.box);
+            GUILayout.BeginArea(new Rect(12, 12, Screen.width - 24, 250), GUI.skin.box);
             GUILayout.Label($"Frame {_estado.Frame}   Suma {_estado.CalcularSumaVerificacion()}   {modo}", _estiloTexto);
             GUILayout.Label(DescribirLuchador("J1", _estado.Luchador1), _estiloTexto);
             GUILayout.Label(DescribirLuchador("J2", _estado.Luchador2), _estiloTexto);
-            GUILayout.Label(DescribirMovimiento("Golpe débil", _configuracion.Jugador1.GolpeDebil), _estiloTexto);
+            GUILayout.Label(DescribirMovimiento("Débil", _configuracion.Jugador1.GolpeDebil), _estiloTexto);
+            GUILayout.Label(DescribirMovimiento("Medio", _configuracion.Jugador1.GolpeMedio), _estiloTexto);
+            GUILayout.Label(DescribirMovimiento("Fuerte", _configuracion.Jugador1.GolpeFuerte), _estiloTexto);
             GUILayout.Label(_medidor.Resumen, _estiloTexto);
             GUILayout.EndArea();
         }
 
         private static string DescribirLuchador(string etiqueta, in EstadoLuchador luchador) =>
-            $"{etiqueta}: {(MedidorVentaja.TieneControl(luchador) ? "LIBRE" : "sin control")}   {luchador.Accion} ({luchador.FramesEnAccion} f)   hitstop {luchador.FramesHitstop}   aturdido {luchador.FramesAturdimiento}   pos {luchador.Posicion}   vel {luchador.Velocidad}   mira {(luchador.MiraDerecha ? "derecha" : "izquierda")}";
+            $"{etiqueta}: {(MedidorVentaja.TieneControl(luchador) ? "LIBRE" : "sin control")}   {DescribirAccion(luchador)} ({luchador.FramesEnAccion} f)   hitstop {luchador.FramesHitstop}   aturdido {luchador.FramesAturdimiento}   combo {luchador.GolpesEnCombo}   búfer {DescribirBufer(luchador)}   pos {luchador.Posicion}   vel {luchador.Velocidad}   mira {(luchador.MiraDerecha ? "derecha" : "izquierda")}";
+
+        private static string DescribirAccion(in EstadoLuchador luchador) =>
+            luchador.Accion == AccionLuchador.Atacando ? $"Atacando {luchador.Ataque}" : luchador.Accion.ToString();
+
+        private static string DescribirBufer(in EstadoLuchador luchador) =>
+            luchador.TieneAtaqueEnBufer ? $"{luchador.AtaqueEnBufer} ({luchador.FramesBufer} f)" : "vacío";
 
         private static string DescribirMovimiento(string nombre, in DatosMovimiento movimiento) =>
             $"{nombre}: arranque {movimiento.Arranque}   activos {movimiento.Activos}   recuperación {movimiento.Recuperacion}   hitstop {movimiento.Hitstop}   ventaja {movimiento.VentajaAlGolpear:+0;-0;0} al golpear, {movimiento.VentajaAlBloquear:+0;-0;0} al bloquear";

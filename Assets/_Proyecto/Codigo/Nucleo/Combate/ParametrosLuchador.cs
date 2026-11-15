@@ -30,6 +30,12 @@ namespace FgcTag.Nucleo.Combate
         /// <summary>Ataque del botón Débil en tierra.</summary>
         public readonly DatosMovimiento GolpeDebil;
 
+        /// <summary>Ataque del botón Medio en tierra.</summary>
+        public readonly DatosMovimiento GolpeMedio;
+
+        /// <summary>Ataque del botón Fuerte en tierra.</summary>
+        public readonly DatosMovimiento GolpeFuerte;
+
         public ParametrosLuchador(
             Fijo velocidadAdelante,
             Fijo velocidadAtras,
@@ -39,7 +45,9 @@ namespace FgcTag.Nucleo.Combate
             Fijo medioAltoEmpujeAire,
             ParametrosSalto salto,
             MedidasCajaDanio medidasDanio,
-            DatosMovimiento golpeDebil)
+            DatosMovimiento golpeDebil,
+            DatosMovimiento golpeMedio,
+            DatosMovimiento golpeFuerte)
         {
             if (velocidadAdelante < Fijo.Cero || velocidadAtras < Fijo.Cero)
             {
@@ -61,6 +69,24 @@ namespace FgcTag.Nucleo.Combate
             Salto = salto;
             MedidasDanio = medidasDanio;
             GolpeDebil = golpeDebil;
+            GolpeMedio = golpeMedio;
+            GolpeFuerte = golpeFuerte;
+        }
+
+        /// <summary>Frame data del ataque indicado.</summary>
+        public DatosMovimiento Movimiento(TipoAtaque ataque)
+        {
+            switch (ataque)
+            {
+                case TipoAtaque.Debil:
+                    return GolpeDebil;
+                case TipoAtaque.Medio:
+                    return GolpeMedio;
+                case TipoAtaque.Fuerte:
+                    return GolpeFuerte;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(ataque), "No hay frame data para un ataque vacío.");
+            }
         }
 
         /// <summary>Medio ancho más grande entre tierra y aire; el escenario debe caber dos de cada lado.</summary>
@@ -92,12 +118,19 @@ namespace FgcTag.Nucleo.Combate
         /// </summary>
         public CajaColision? CajaGolpeActiva(in EstadoLuchador luchador)
         {
-            if (luchador.Accion != AccionLuchador.Atacando || !GolpeDebil.EstaActivo(luchador.FramesEnAccion))
+            if (luchador.Accion != AccionLuchador.Atacando)
             {
                 return null;
             }
 
-            return GolpeDebil.CajaGolpe.Orientada(luchador.MiraDerecha).Desplazada(luchador.Posicion);
+            var movimiento = Movimiento(luchador.Ataque);
+
+            if (!movimiento.EstaActivo(luchador.FramesEnAccion))
+            {
+                return null;
+            }
+
+            return movimiento.CajaGolpe.Orientada(luchador.MiraDerecha).Desplazada(luchador.Posicion);
         }
     }
 }

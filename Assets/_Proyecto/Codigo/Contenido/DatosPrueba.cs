@@ -38,6 +38,42 @@ namespace FgcTag.Contenido
                 Fijo.DesdeFraccion(45, 100),
                 Fijo.DesdeFraccion(2, 10)));
 
+        /// <summary>
+        /// Golpe medio: golpea en el frame 7, dura 23 frames, +1 al golpear y -3 al bloquear.
+        /// Más alcance que el débil; es el enlace natural de un combo.
+        /// </summary>
+        public static readonly DatosMovimiento GolpeMedioCajaGris = new DatosMovimiento(
+            arranque: 6,
+            activos: 3,
+            recuperacion: 14,
+            hitstun: 17,
+            blockstun: 13,
+            hitstop: 10,
+            retrocesoAlGolpear: Fijo.DesdeFraccion(12, 100),
+            retrocesoAlBloquear: Fijo.DesdeFraccion(10, 100),
+            cajaGolpe: new CajaColision(
+                new VectorFijo(Fijo.DesdeFraccion(90, 100), Fijo.DesdeFraccion(110, 100)),
+                Fijo.DesdeFraccion(60, 100),
+                Fijo.DesdeFraccion(22, 100)));
+
+        /// <summary>
+        /// Golpe fuerte: golpea en el frame 10, dura 33 frames, -2 al golpear y -7 al bloquear.
+        /// El de más alcance y más hitstop; castigable si lo bloquean.
+        /// </summary>
+        public static readonly DatosMovimiento GolpeFuerteCajaGris = new DatosMovimiento(
+            arranque: 9,
+            activos: 4,
+            recuperacion: 20,
+            hitstun: 21,
+            blockstun: 16,
+            hitstop: 12,
+            retrocesoAlGolpear: Fijo.DesdeFraccion(15, 100),
+            retrocesoAlBloquear: Fijo.DesdeFraccion(12, 100),
+            cajaGolpe: new CajaColision(
+                new VectorFijo(Fijo.DesdeFraccion(105, 100), Fijo.DesdeFraccion(100, 100)),
+                Fijo.DesdeFraccion(80, 100),
+                Fijo.DesdeFraccion(30, 100)));
+
         public static readonly MedidasCajaDanio CajaDanioCajaGris = new MedidasCajaDanio(
             medioAncho: Fijo.DesdeFraccion(4, 10),
             medioAltoDePie: Fijo.DesdeFraccion(9, 10),
@@ -53,14 +89,17 @@ namespace FgcTag.Contenido
             medioAltoEmpujeAire: Fijo.DesdeFraccion(5, 10),
             salto: SaltoCajaGris,
             medidasDanio: CajaDanioCajaGris,
-            golpeDebil: GolpeDebilCajaGris);
+            golpeDebil: GolpeDebilCajaGris,
+            golpeMedio: GolpeMedioCajaGris,
+            golpeFuerte: GolpeFuerteCajaGris);
 
         public static readonly ConfiguracionCombate ConfiguracionCajasGrises = new ConfiguracionCombate(
             LuchadorCajaGris,
             LuchadorCajaGris,
             Fijo.DesdeEntero(-7),
             Fijo.DesdeEntero(7),
-            friccionRetroceso: Fijo.DesdeFraccion(1, 100));
+            friccionRetroceso: Fijo.DesdeFraccion(1, 100),
+            framesBuferEntradas: 5);
 
         public static readonly EstadoPartida EstadoInicial = EstadoPartida.Crear(
             VectorFijo.DesdeEnteros(-2, 0),
