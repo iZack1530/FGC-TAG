@@ -54,6 +54,9 @@ namespace FgcTag.Nucleo.Combate
 
         /// <summary>Aturdido en el suelo por un golpe bloqueado con la guardia baja.</summary>
         BlockstunAgachado = 17,
+
+        /// <summary>Recién llegado a la pantalla por un cambio o un relevo: en el suelo, sin control y sin poder bloquear.</summary>
+        Entrando = 18,
     }
 
     public static class EstadosAccion
@@ -67,7 +70,7 @@ namespace FgcTag.Nucleo.Combate
 
         /// <summary>Acciones en las que el luchador se gira para mirar al rival. En el aire, atacando o aturdido conserva su orientación.</summary>
         public static bool PuedeGirar(AccionLuchador accion) =>
-            TieneControlEnTierra(accion) || accion == AccionLuchador.Aterrizaje;
+            TieneControlEnTierra(accion) || accion == AccionLuchador.Aterrizaje || accion == AccionLuchador.Entrando;
 
         /// <summary>Se puede bloquear con control en tierra, o encadenando bloqueos mientras dura el blockstun.</summary>
         public static bool PuedeBloquear(AccionLuchador accion) =>

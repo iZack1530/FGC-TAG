@@ -27,6 +27,9 @@ namespace FgcTag.Nucleo.Combate
         /// <summary>Duración del reloj de la ronda, en frames de 60 Hz.</summary>
         public readonly int FramesPorRonda;
 
+        /// <summary>Frames que tarda en poder actuar un luchador que acaba de entrar a la pantalla.</summary>
+        public readonly int FramesEntrada;
+
         public ConfiguracionCombate(
             ParametrosLuchador jugador1,
             ParametrosLuchador jugador2,
@@ -36,8 +39,14 @@ namespace FgcTag.Nucleo.Combate
             int framesBuferEntradas,
             ReglasDanio danio,
             ReglasJuggle juggle,
-            int framesPorRonda)
+            int framesPorRonda,
+            int framesEntrada)
         {
+            if (framesEntrada < 1)
+            {
+                throw new ArgumentOutOfRangeException(nameof(framesEntrada), "La entrada dura al menos 1 frame.");
+            }
+
             var anchoMinimo = (jugador1.MedioAnchoMaximo + jugador2.MedioAnchoMaximo) * 2;
 
             if (limiteDerecho - limiteIzquierdo < anchoMinimo)
@@ -69,6 +78,21 @@ namespace FgcTag.Nucleo.Combate
             Danio = danio;
             Juggle = juggle;
             FramesPorRonda = framesPorRonda;
+            FramesEntrada = framesEntrada;
         }
+
+        /// <summary>Las mismas reglas con otros dos luchadores en pantalla.</summary>
+        public ConfiguracionCombate ConLuchadores(in ParametrosLuchador jugador1, in ParametrosLuchador jugador2) =>
+            new ConfiguracionCombate(
+                jugador1,
+                jugador2,
+                LimiteIzquierdo,
+                LimiteDerecho,
+                FriccionRetroceso,
+                FramesBuferEntradas,
+                Danio,
+                Juggle,
+                FramesPorRonda,
+                FramesEntrada);
     }
 }

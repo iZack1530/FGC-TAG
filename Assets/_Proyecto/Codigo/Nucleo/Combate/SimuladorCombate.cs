@@ -274,6 +274,11 @@ namespace FgcTag.Nucleo.Combate
                         ? Despegar(luchador, botones, parametros.Salto)
                         : luchador.ConAccion(AccionLuchador.PreSalto);
 
+                case AccionLuchador.Entrando:
+                    return luchador.FramesEnAccion + 1 >= configuracion.FramesEntrada
+                        ? ControlarEnTierra(luchador, botones, parametros)
+                        : luchador.ConAccion(AccionLuchador.Entrando);
+
                 case AccionLuchador.Aterrizaje:
                     return luchador.FramesEnAccion + 1 >= parametros.Salto.FramesAterrizaje
                         ? ControlarEnTierra(luchador, botones, parametros)
