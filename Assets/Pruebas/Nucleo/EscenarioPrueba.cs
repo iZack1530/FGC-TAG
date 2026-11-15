@@ -1,5 +1,6 @@
 using FgcTag.Nucleo.Colisiones;
 using FgcTag.Nucleo.Combate;
+using FgcTag.Nucleo.Encuentros;
 using FgcTag.Nucleo.Equipos;
 using FgcTag.Nucleo.Matematica;
 
@@ -234,7 +235,20 @@ namespace FgcTag.Pruebas.Nucleo
                 fuerteAgachado: GolpeFuerteAgachado,
                 debilAereo: GolpeDebilAereo,
                 medioAereo: GolpeMedioAereo,
-                fuerteAereo: GolpeFuerteAereo));
+                fuerteAereo: GolpeFuerteAereo,
+                asistencia: GolpeMedio));
+
+        /// <summary>
+        /// La mitad del daño de un golpe queda como vida recuperable y cada golpe nuevo destruye
+        /// un cuarto de la acumulada. En pantalla se regeneran 2 por frame tras 30 frames sin
+        /// recibir golpes; en reserva, 5 por frame.
+        /// </summary>
+        public static readonly ReglasVidaRecuperable Recuperable = new ReglasVidaRecuperable(
+            porcentajeRecuperable: 50,
+            porcentajePerdidoAlRecibirGolpe: 25,
+            framesEsperaRegeneracion: 30,
+            regeneracionPorFrame: 2,
+            regeneracionEnReservaPorFrame: 5);
 
         public static readonly ConfiguracionCombate Configuracion = ConfiguracionConReloj(FramesPorRonda);
 
@@ -247,6 +261,7 @@ namespace FgcTag.Pruebas.Nucleo
             framesBuferEntradas: FramesBufer,
             danio: Danio,
             juggle: Juggle,
+            vidaRecuperable: Recuperable,
             framesPorRonda: framesPorRonda,
             framesEntrada: FramesEntrada);
 
@@ -255,6 +270,14 @@ namespace FgcTag.Pruebas.Nucleo
 
         public const int FramesEsperaCambio = 60;
         public const int FramesPausaNocaut = 30;
+
+        /// <summary>Mantener un botón de asistencia 4 frames cambia de luchador; soltarlo antes llama al asistente.</summary>
+        public const int FramesMantenerParaCambiar = 4;
+
+        /// <summary>El asistente tarda 6 frames en llegar y después hace el golpe medio (golpea 6 frames más tarde).</summary>
+        public const int FramesLlegadaAsistencia = 6;
+
+        public const int FramesEsperaAsistencia = 90;
 
         /// <summary>Vida máxima de los tres miembros de cada equipo de prueba.</summary>
         public const int VidaSegundo = 1200;
@@ -273,7 +296,34 @@ namespace FgcTag.Pruebas.Nucleo
             ConfiguracionConReloj(framesPorRonda),
             framesEsperaCambio: FramesEsperaCambio,
             framesPausaNocaut: FramesPausaNocaut,
-            distanciaEntrada: Fijo.DesdeEntero(4));
+            distanciaEntrada: Fijo.DesdeEntero(4),
+            framesMantenerParaCambiar: FramesMantenerParaCambiar,
+            framesLlegadaAsistencia: FramesLlegadaAsistencia,
+            framesEsperaAsistencia: FramesEsperaAsistencia);
+
+        public const int FramesEntreRondas = 20;
+
+        /// <summary>Encuentro al mejor de 3 (2 victorias), con los luchadores pegados al empezar cada ronda.</summary>
+        public static readonly ConfiguracionEncuentro Encuentro = EncuentroConReloj(FramesPorRonda);
+
+        public static ConfiguracionEncuentro EncuentroConReloj(int framesPorRonda) => new ConfiguracionEncuentro(
+            EquiposConReloj(framesPorRonda),
+            victoriasNecesarias: 2,
+            framesEntreRondas: FramesEntreRondas,
+            posicionInicial1: VectorFijo.DesdeEnteros(0, 0),
+            posicionInicial2: VectorFijo.DesdeEnteros(1, 0));
+
+        public static EstadoEncuentro SimularEncuentro(EstadoEncuentro estado, BotonesEntrada jugador1, BotonesEntrada jugador2, int frames)
+        {
+            var entradas = new EntradasFrame(jugador1, jugador2);
+
+            for (var i = 0; i < frames; i++)
+            {
+                estado = SimuladorEncuentro.Avanzar(estado, entradas, Encuentro);
+            }
+
+            return estado;
+        }
 
         public static EstadoCombateEquipos InicialPorEquipos(int x1, int x2) =>
             EstadoCombateEquipos.Crear(VectorFijo.DesdeEnteros(x1, 0), VectorFijo.DesdeEnteros(x2, 0), Equipos);
@@ -289,6 +339,27 @@ namespace FgcTag.Pruebas.Nucleo
 
             return estado;
         }
+
+        /// <summary>El jugador 1 mantiene un botón de asistencia los frames justos para cambiar de luchador en el último.</summary>
+        public static EstadoCombateEquipos CambiarJugador1(EstadoCombateEquipos estado, BotonesEntrada botonDeAsistencia) =>
+            SimularEquipos(estado, botonDeAsistencia, BotonesEntrada.Ninguno, FramesMantenerParaCambiar);
+
+        /// <summary>El jugador 1 pulsa y suelta un botón de asistencia: el asistente queda llamado en el segundo frame.</summary>
+        public static EstadoCombateEquipos LlamarAsistenteJugador1(EstadoCombateEquipos estado, BotonesEntrada botonDeAsistencia, BotonesEntrada jugador2)
+        {
+            var pulsado = SimularEquipos(estado, botonDeAsistencia, jugador2, 1);
+
+            return SimularEquipos(pulsado, BotonesEntrada.Ninguno, jugador2, 1);
+        }
+
+        /// <summary>Copia del estado con vida recuperable en el luchador en pantalla del jugador 1.</summary>
+        public static EstadoCombateEquipos ConRecuperableActivo1(EstadoCombateEquipos estado, int recuperable) =>
+            new EstadoCombateEquipos(
+                new EstadoPartida(estado.Duelo.Frame, estado.Duelo.Luchador1.ConVidaRecuperable(recuperable), estado.Duelo.Luchador2, estado.Duelo.FramesRestantes, estado.Duelo.Resultado),
+                estado.Equipo1,
+                estado.Equipo2,
+                estado.Resultado,
+                estado.FramesDesdeNocaut);
 
         /// <summary>Copia del estado con la vida de los luchadores en pantalla cambiada.</summary>
         public static EstadoCombateEquipos ConVidasActivas(EstadoCombateEquipos estado, int vida1, int vida2) =>

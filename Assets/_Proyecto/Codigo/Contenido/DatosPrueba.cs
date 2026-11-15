@@ -1,5 +1,6 @@
 using FgcTag.Nucleo.Colisiones;
 using FgcTag.Nucleo.Combate;
+using FgcTag.Nucleo.Encuentros;
 using FgcTag.Nucleo.Equipos;
 using FgcTag.Nucleo.Matematica;
 
@@ -246,6 +247,19 @@ namespace FgcTag.Contenido
         /// </summary>
         public static readonly ReglasDanio DanioCajasGrises = new ReglasDanio(reduccionPorGolpe: 10, porcentajeMinimo: 30, porcentajeAlBloquear: 10);
 
+        /// <summary>
+        /// Vida azul: la mitad del daño de cada golpe no bloqueado se puede recuperar y cada golpe
+        /// nuevo destruye un cuarto de la acumulada. En pantalla se regeneran 2 por frame (120 por
+        /// segundo) tras 3 segundos sin recibir golpes; en reserva, 6 por frame (360 por segundo)
+        /// y sin espera.
+        /// </summary>
+        public static readonly ReglasVidaRecuperable VidaRecuperableCajasGrises = new ReglasVidaRecuperable(
+            porcentajeRecuperable: 50,
+            porcentajePerdidoAlRecibirGolpe: 25,
+            framesEsperaRegeneracion: 180,
+            regeneracionPorFrame: 2,
+            regeneracionEnReservaPorFrame: 6);
+
         /// <summary>99 segundos de reloj.</summary>
         public const int FramesPorRonda = 99 * 60;
 
@@ -269,7 +283,8 @@ namespace FgcTag.Contenido
                 fuerteAgachado: GolpeFuerteAgachadoCajaGris,
                 debilAereo: GolpeDebilAereoCajaGris,
                 medioAereo: GolpeMedioAereoCajaGris,
-                fuerteAereo: GolpeFuerteAereoCajaGris));
+                fuerteAereo: GolpeFuerteAereoCajaGris,
+                asistencia: GolpeMedioCajaGris));
 
         public static readonly ConfiguracionCombate ConfiguracionCajasGrises = new ConfiguracionCombate(
             LuchadorCajaGris,
@@ -280,6 +295,7 @@ namespace FgcTag.Contenido
             framesBuferEntradas: 5,
             danio: DanioCajasGrises,
             juggle: JuggleCajasGrises,
+            vidaRecuperable: VidaRecuperableCajasGrises,
             framesPorRonda: FramesPorRonda,
             framesEntrada: 20);
 
@@ -289,7 +305,9 @@ namespace FgcTag.Contenido
         /// <summary>
         /// Combate 3 contra 3: quien entra tarda 20 frames en poder actuar, cada equipo espera
         /// 2 segundos entre cambios y, tras un K.O., el siguiente luchador entra 1 segundo después
-        /// a 4 m del rival.
+        /// a 4 m del rival. Mantener un botón de asistencia 10 frames cambia de luchador; soltarlo
+        /// antes llama al asistente, que tarda 12 frames en llegar, y hay que esperar 3 segundos
+        /// para llamar a otro.
         /// </summary>
         public static readonly ConfiguracionEquipos EquiposCajasGrises = new ConfiguracionEquipos(
             EquipoCajasGrises,
@@ -297,11 +315,19 @@ namespace FgcTag.Contenido
             ConfiguracionCajasGrises,
             framesEsperaCambio: 120,
             framesPausaNocaut: 60,
-            distanciaEntrada: Fijo.DesdeEntero(4));
+            distanciaEntrada: Fijo.DesdeEntero(4),
+            framesMantenerParaCambiar: 10,
+            framesLlegadaAsistencia: 12,
+            framesEsperaAsistencia: 180);
 
-        public static readonly EstadoCombateEquipos CombateInicial = EstadoCombateEquipos.Crear(
-            VectorFijo.DesdeEnteros(-2, 0),
-            VectorFijo.DesdeEnteros(2, 0),
-            EquiposCajasGrises);
+        /// <summary>Encuentro al mejor de 3 rondas (2 victorias), con 3 segundos de pausa entre rondas.</summary>
+        public static readonly ConfiguracionEncuentro EncuentroCajasGrises = new ConfiguracionEncuentro(
+            EquiposCajasGrises,
+            victoriasNecesarias: 2,
+            framesEntreRondas: 180,
+            posicionInicial1: VectorFijo.DesdeEnteros(-2, 0),
+            posicionInicial2: VectorFijo.DesdeEnteros(2, 0));
+
+        public static readonly EstadoEncuentro EncuentroInicial = EstadoEncuentro.Crear(EncuentroCajasGrises);
     }
 }

@@ -131,6 +131,22 @@ namespace FgcTag.Nucleo.Combate
         public static bool EstaEnCombo(AccionLuchador accion) =>
             accion == AccionLuchador.Hitstun || accion == AccionLuchador.GolpeadoEnAire;
 
+        /// <summary>
+        /// Se puede llamar a un asistente mientras el luchador controla lo que hace: no si está
+        /// aturdido, en un combo, derribado, entrando o recuperándose en el aire.
+        /// </summary>
+        public static bool PuedePedirAsistencia(AccionLuchador accion) =>
+            !EstaAturdido(accion) &&
+            !EstaEnCombo(accion) &&
+            !EsInvulnerable(accion) &&
+            accion != AccionLuchador.Entrando &&
+            accion != AccionLuchador.BloqueandoEnAire &&
+            accion != AccionLuchador.RecuperandoEnAire;
+
+        /// <summary>Ataques en tierra: los únicos que, al conectar, se pueden interrumpir con un cambio de luchador.</summary>
+        public static bool EstaAtacandoEnTierra(AccionLuchador accion) =>
+            accion == AccionLuchador.Atacando || accion == AccionLuchador.AtacandoAgachado;
+
         public static bool EstaAturdido(AccionLuchador accion) =>
             accion == AccionLuchador.Hitstun ||
             accion == AccionLuchador.Blockstun ||

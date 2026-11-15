@@ -25,14 +25,39 @@ namespace FgcTag.Nucleo.Equipos
         /// <summary>Distancia al rival, hacia el lado de su equipo, a la que aparece el luchador que releva a un noqueado.</summary>
         public readonly Fijo DistanciaEntrada;
 
+        /// <summary>
+        /// Frames que hay que mantener un botón de asistencia para cambiar de luchador. Soltarlo
+        /// antes llama al compañero como asistente.
+        /// </summary>
+        public readonly int FramesMantenerParaCambiar;
+
+        /// <summary>Frames que tarda el asistente en llegar antes de empezar su ataque.</summary>
+        public readonly int FramesLlegadaAsistencia;
+
+        /// <summary>Frames que un equipo espera tras llamar a una asistencia antes de poder llamar a otra.</summary>
+        public readonly int FramesEsperaAsistencia;
+
         public ConfiguracionEquipos(
             ParametrosEquipo equipo1,
             ParametrosEquipo equipo2,
             ConfiguracionCombate reglas,
             int framesEsperaCambio,
             int framesPausaNocaut,
-            Fijo distanciaEntrada)
+            Fijo distanciaEntrada,
+            int framesMantenerParaCambiar,
+            int framesLlegadaAsistencia,
+            int framesEsperaAsistencia)
         {
+            if (framesMantenerParaCambiar < 2)
+            {
+                throw new ArgumentOutOfRangeException(nameof(framesMantenerParaCambiar), "Hay que mantener el botón al menos 2 frames para distinguirlo de una pulsación.");
+            }
+
+            if (framesLlegadaAsistencia < 0 || framesEsperaAsistencia < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(framesLlegadaAsistencia), "Los tiempos de la asistencia no pueden ser negativos.");
+            }
+
             if (framesEsperaCambio < 0 || framesPausaNocaut < 1)
             {
                 throw new ArgumentOutOfRangeException(nameof(framesPausaNocaut), "La espera de cambio no puede ser negativa y la pausa de K.O. dura al menos 1 frame.");
@@ -49,6 +74,9 @@ namespace FgcTag.Nucleo.Equipos
             FramesEsperaCambio = framesEsperaCambio;
             FramesPausaNocaut = framesPausaNocaut;
             DistanciaEntrada = distanciaEntrada;
+            FramesMantenerParaCambiar = framesMantenerParaCambiar;
+            FramesLlegadaAsistencia = framesLlegadaAsistencia;
+            FramesEsperaAsistencia = framesEsperaAsistencia;
         }
 
         /// <summary>Configuración del duelo entre los luchadores que cada equipo tiene en pantalla.</summary>

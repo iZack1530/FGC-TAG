@@ -43,10 +43,34 @@ namespace FgcTag.Nucleo.Combate
                 return new EstadoPartida(estado.Frame + 1, orientado1, orientado2, estado.FramesRestantes, estado.Resultado);
             }
 
-            var framesRestantes = estado.FramesRestantes > 0 ? estado.FramesRestantes - 1 : 0;
-            var resultado = DecidirRonda(orientado1, orientado2, framesRestantes, configuracion);
+            var regenerado1 = Regenerar(orientado1, configuracion.VidaRecuperable);
+            var regenerado2 = Regenerar(orientado2, configuracion.VidaRecuperable);
 
-            return new EstadoPartida(estado.Frame + 1, orientado1, orientado2, framesRestantes, resultado);
+            var framesRestantes = estado.FramesRestantes > 0 ? estado.FramesRestantes - 1 : 0;
+            var resultado = DecidirRonda(regenerado1, regenerado2, framesRestantes, configuracion);
+
+            return new EstadoPartida(estado.Frame + 1, regenerado1, regenerado2, framesRestantes, resultado);
+        }
+
+        /// <summary>
+        /// Vida recuperable del luchador en pantalla: tras unos frames sin recibir golpes, cada
+        /// frame convierte un poco de vida azul en vida real.
+        /// </summary>
+        private static EstadoLuchador Regenerar(in EstadoLuchador luchador, in ReglasVidaRecuperable reglas)
+        {
+            if (luchador.FramesSinRecibirGolpe < reglas.FramesEsperaRegeneracion)
+            {
+                return luchador.ConFramesSinRecibirGolpe(luchador.FramesSinRecibirGolpe + 1);
+            }
+
+            if (luchador.SinVida || luchador.VidaRecuperable <= 0)
+            {
+                return luchador;
+            }
+
+            var curacion = ReglasVidaRecuperable.Curacion(luchador.VidaRecuperable, reglas.RegeneracionPorFrame);
+
+            return luchador.ConVida(luchador.Vida + curacion).ConVidaRecuperable(luchador.VidaRecuperable - curacion);
         }
 
         /// <summary>

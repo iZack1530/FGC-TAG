@@ -1,3 +1,4 @@
+using System;
 using FgcTag.Nucleo.Combate;
 using FgcTag.Nucleo.Matematica;
 using NUnit.Framework;
@@ -21,8 +22,10 @@ namespace FgcTag.Pruebas.Nucleo
         }
 
         /// <summary>El jugador 1 encadena Débil, Medio y Fuerte pulsando el siguiente botón en cuanto conecta el anterior.</summary>
-        private static EstadoPartida ComboCompleto(EstadoPartida inicial, int frames)
+        /// <returns>La vida más baja del jugador 2 durante el combo: después empieza a regenerar su vida recuperable.</returns>
+        private static int VidaMinimaTrasElCombo(EstadoPartida inicial, int frames)
         {
+            var vidaMinima = inicial.Luchador2.Vida;
             var siguientes = new[] { BotonesEntrada.Medio, BotonesEntrada.Fuerte };
             var indice = 0;
             var enHitstop = false;
@@ -34,9 +37,10 @@ namespace FgcTag.Pruebas.Nucleo
                 var botones = acabaDeConectar && indice < siguientes.Length ? siguientes[indice++] : BotonesEntrada.Ninguno;
                 enHitstop = estado.Luchador1.EnHitstop;
                 estado = Simular(estado, botones, BotonesEntrada.Ninguno, 1);
+                vidaMinima = Math.Min(vidaMinima, estado.Luchador2.Vida);
             }
 
-            return estado;
+            return vidaMinima;
         }
 
         [Test]
@@ -92,9 +96,7 @@ namespace FgcTag.Pruebas.Nucleo
         [Test]
         public void ElComboEscalaElDanioDeCadaGolpe()
         {
-            var estado = ComboCompleto(Inicial(0, 1), 150);
-
-            Assert.AreEqual(VidaMaxima - (100 + 180 + 240), estado.Luchador2.Vida);
+            Assert.AreEqual(VidaMaxima - (100 + 180 + 240), VidaMinimaTrasElCombo(Inicial(0, 1), 150));
         }
 
         [Test]

@@ -6,7 +6,7 @@ namespace FgcTag.Nucleo.Combate
     /// Golpes de un frame: comprueba la caja de golpe de cada atacante contra la caja de daño del
     /// rival y aplica el resultado (bloqueo, hitstun, lanzamiento, juggle o K.O.).
     /// </summary>
-    internal static class ResolucionGolpes
+    public static class ResolucionGolpes
     {
         /// <summary>Los dos golpes se evalúan sobre el mismo estado, así que dos ataques simultáneos se intercambian.</summary>
         public static (EstadoLuchador, EstadoLuchador) Resolver(
@@ -44,7 +44,7 @@ namespace FgcTag.Nucleo.Combate
             in ParametrosLuchador parametrosDefensor,
             in ReglasJuggle juggle)
         {
-            if (atacante.GolpeConectado || EstadosAccion.EsInvulnerable(defensor.Accion) || juggle.EsInvencibleAlRecuperarse(defensor))
+            if (atacante.GolpeConectado || !PuedeSerGolpeado(defensor, juggle))
             {
                 return false;
             }
@@ -53,6 +53,10 @@ namespace FgcTag.Nucleo.Combate
 
             return cajaGolpe.HasValue && cajaGolpe.Value.Intersecta(parametrosDefensor.CajaDanio(defensor));
         }
+
+        /// <summary>Un luchador derribado, noqueado o en los primeros frames de su recuperación aérea no recibe golpes.</summary>
+        public static bool PuedeSerGolpeado(in EstadoLuchador defensor, in ReglasJuggle juggle) =>
+            !EstadosAccion.EsInvulnerable(defensor.Accion) && !juggle.EsInvencibleAlRecuperarse(defensor);
 
         /// <summary>El atacante anota que su golpe conectó, y si el rival lo bloqueó, y entra en hitstop.</summary>
         private static EstadoLuchador MarcarContacto(in EstadoLuchador atacante, in DatosMovimiento movimiento, in EstadoLuchador defensorTrasElGolpe)
@@ -75,11 +79,24 @@ namespace FgcTag.Nucleo.Combate
             in EstadoLuchador atacante,
             BotonesEntrada botonesDefensor,
             in DatosMovimiento movimiento,
+            in ConfiguracionCombate configuracion) =>
+            RecibirGolpeDesde(defensor, atacante.Posicion.X, atacante.MiraDerecha, botonesDefensor, movimiento, configuracion);
+
+        /// <summary>
+        /// Aplica un golpe que viene de la posición indicada, sea del rival en pantalla o de un
+        /// asistente. Devuelve al defensor tras bloquearlo o recibirlo.
+        /// </summary>
+        public static EstadoLuchador RecibirGolpeDesde(
+            in EstadoLuchador defensor,
+            Fijo xAtacante,
+            bool atacanteMiraDerecha,
+            BotonesEntrada botonesDefensor,
+            in DatosMovimiento movimiento,
             in ConfiguracionCombate configuracion)
         {
-            var sentidoRetroceso = defensor.Posicion.X != atacante.Posicion.X
-                ? (defensor.Posicion.X > atacante.Posicion.X ? 1 : -1)
-                : atacante.SentidoAdelante;
+            var sentidoRetroceso = defensor.Posicion.X != xAtacante
+                ? (defensor.Posicion.X > xAtacante ? 1 : -1)
+                : (atacanteMiraDerecha ? 1 : -1);
 
             var enAire = EstadosAccion.EstaEnElAire(defensor.Accion);
             var congelado = defensor.ConHitstop(movimiento.Hitstop).ConGolpeConectado(false).ConAtaque(TipoAtaque.Ninguno);
@@ -115,7 +132,14 @@ namespace FgcTag.Nucleo.Combate
             var golpesEnCombo = EstadosAccion.EstaEnCombo(defensor.Accion) ? defensor.GolpesEnCombo + 1 : 1;
             var vida = VidaTrasGolpe(defensor, configuracion.Danio.Escalar(movimiento.Danio, golpesEnCombo));
             var retroceso = movimiento.RetrocesoAlGolpear * sentidoRetroceso;
-            var golpeado = congelado.ConGolpesEnCombo(golpesEnCombo).ConVida(vida).ConAturdimiento(0);
+            var recuperable = vida > 0 ? configuracion.VidaRecuperable.TrasGolpe(defensor.VidaRecuperable, defensor.Vida - vida) : 0;
+
+            var golpeado = congelado
+                .ConGolpesEnCombo(golpesEnCombo)
+                .ConVida(vida)
+                .ConVidaRecuperable(recuperable)
+                .ConFramesSinRecibirGolpe(0)
+                .ConAturdimiento(0);
 
             if (enAire || movimiento.Lanza)
             {

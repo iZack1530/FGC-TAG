@@ -62,32 +62,45 @@ namespace FgcTag.Pruebas.Nucleo
         }
 
         [Test]
-        public void Asistencia1CambiaAlSiguienteCompaneroEnElMismoSitio()
+        public void MantenerAsistencia1CambiaAlSiguienteCompaneroEnElMismoSitio()
         {
             var inicial = InicialPorEquipos(-2, 2);
-            var estado = SimularEquipos(inicial, BotonesEntrada.Asistencia1, BotonesEntrada.Ninguno, 1);
+            var antes = SimularEquipos(inicial, BotonesEntrada.Asistencia1, BotonesEntrada.Ninguno, FramesMantenerParaCambiar - 1);
+
+            Assert.AreEqual(0, antes.Equipo1.IndiceActivo);
+
+            var estado = SimularEquipos(antes, BotonesEntrada.Asistencia1, BotonesEntrada.Ninguno, 1);
 
             Assert.AreEqual(1, estado.Equipo1.IndiceActivo);
             Assert.AreEqual(VidaSegundo, estado.Duelo.Luchador1.Vida);
             Assert.AreEqual(AccionLuchador.Entrando, estado.Duelo.Luchador1.Accion);
             Assert.AreEqual(inicial.Duelo.Luchador1.Posicion, estado.Duelo.Luchador1.Posicion);
             Assert.IsTrue(estado.Duelo.Luchador1.MiraDerecha);
+            Assert.IsFalse(estado.Equipo1.Asistente.EnPantalla);
             Assert.AreEqual(0, estado.Equipo2.IndiceActivo);
         }
 
         [Test]
-        public void Asistencia2CambiaAlOtroCompanero()
+        public void MantenerAsistencia2CambiaAlOtroCompanero()
         {
-            var estado = SimularEquipos(InicialPorEquipos(-2, 2), BotonesEntrada.Asistencia2, BotonesEntrada.Ninguno, 1);
+            var estado = CambiarJugador1(InicialPorEquipos(-2, 2), BotonesEntrada.Asistencia2);
 
             Assert.AreEqual(2, estado.Equipo1.IndiceActivo);
             Assert.AreEqual(VidaTercero, estado.Duelo.Luchador1.Vida);
         }
 
         [Test]
+        public void SeguirManteniendoElBotonNoVuelveACambiar()
+        {
+            var estado = SimularEquipos(InicialPorEquipos(-2, 2), BotonesEntrada.Asistencia1, BotonesEntrada.Ninguno, FramesMantenerParaCambiar + FramesEsperaCambio + 20);
+
+            Assert.AreEqual(1, estado.Equipo1.IndiceActivo);
+        }
+
+        [Test]
         public void QuienEntraTardaUnosFramesEnPoderActuar()
         {
-            var estado = SimularEquipos(InicialPorEquipos(-2, 2), BotonesEntrada.Asistencia1, BotonesEntrada.Ninguno, 1);
+            var estado = CambiarJugador1(InicialPorEquipos(-2, 2), BotonesEntrada.Asistencia1);
             estado = SimularEquipos(estado, BotonesEntrada.Derecha, BotonesEntrada.Ninguno, FramesEntrada - 2);
 
             Assert.AreEqual(AccionLuchador.Entrando, estado.Duelo.Luchador1.Accion);
@@ -101,7 +114,8 @@ namespace FgcTag.Pruebas.Nucleo
         [Test]
         public void MantenerUnGolpeDuranteElCambioNoLanzaUnAtaque()
         {
-            var estado = SimularEquipos(InicialPorEquipos(-2, 2), BotonesEntrada.Asistencia1 | BotonesEntrada.Debil, BotonesEntrada.Ninguno, FramesEntrada);
+            var estado = SimularEquipos(InicialPorEquipos(-2, 2), BotonesEntrada.Asistencia1, BotonesEntrada.Ninguno, FramesMantenerParaCambiar - 1);
+            estado = SimularEquipos(estado, BotonesEntrada.Asistencia1 | BotonesEntrada.Debil, BotonesEntrada.Ninguno, FramesEntrada);
 
             Assert.AreEqual(1, estado.Equipo1.IndiceActivo);
             Assert.AreEqual(AccionLuchador.Quieto, estado.Duelo.Luchador1.Accion);
@@ -110,14 +124,14 @@ namespace FgcTag.Pruebas.Nucleo
         [Test]
         public void ElCambioTieneEsperaAntesDeRepetirse()
         {
-            var estado = SimularEquipos(InicialPorEquipos(-2, 2), BotonesEntrada.Asistencia1, BotonesEntrada.Ninguno, 1);
-            estado = SimularEquipos(estado, BotonesEntrada.Ninguno, BotonesEntrada.Ninguno, 28);
-            estado = SimularEquipos(estado, BotonesEntrada.Asistencia1, BotonesEntrada.Ninguno, 1);
+            var estado = CambiarJugador1(InicialPorEquipos(-2, 2), BotonesEntrada.Asistencia1);
+            estado = SimularEquipos(estado, BotonesEntrada.Ninguno, BotonesEntrada.Ninguno, 20);
+            estado = CambiarJugador1(estado, BotonesEntrada.Asistencia1);
 
             Assert.AreEqual(1, estado.Equipo1.IndiceActivo);
 
-            estado = SimularEquipos(estado, BotonesEntrada.Ninguno, BotonesEntrada.Ninguno, FramesEsperaCambio - 30);
-            estado = SimularEquipos(estado, BotonesEntrada.Asistencia1, BotonesEntrada.Ninguno, 1);
+            estado = SimularEquipos(estado, BotonesEntrada.Ninguno, BotonesEntrada.Ninguno, FramesEsperaCambio);
+            estado = CambiarJugador1(estado, BotonesEntrada.Asistencia1);
 
             Assert.AreEqual(2, estado.Equipo1.IndiceActivo);
         }
@@ -125,25 +139,25 @@ namespace FgcTag.Pruebas.Nucleo
         [Test]
         public void LaVidaDeQuienSaleSeConservaHastaQueVuelve()
         {
-            var estado = SimularEquipos(ConVidasActivas(InicialPorEquipos(-2, 2), 700, VidaMaxima), BotonesEntrada.Asistencia1, BotonesEntrada.Ninguno, 1);
+            var estado = CambiarJugador1(ConVidasActivas(InicialPorEquipos(-2, 2), 700, VidaMaxima), BotonesEntrada.Asistencia1);
 
             Assert.AreEqual(700, estado.Equipo1.VidaDe(0, estado.Duelo.Luchador1));
 
             estado = SimularEquipos(estado, BotonesEntrada.Ninguno, BotonesEntrada.Ninguno, FramesEsperaCambio);
-            estado = SimularEquipos(estado, BotonesEntrada.Asistencia2, BotonesEntrada.Ninguno, 1);
+            estado = CambiarJugador1(estado, BotonesEntrada.Asistencia2);
 
             Assert.AreEqual(0, estado.Equipo1.IndiceActivo);
             Assert.AreEqual(700, estado.Duelo.Luchador1.Vida);
         }
 
         [Test]
-        public void NoSeCambiaMientrasSeAtacaNiEnElAire()
+        public void NoSeCambiaConUnAtaqueQueFallaNiEnElAire()
         {
-            var atacando = SimularEquipos(InicialPorEquipos(-2, 2), BotonesEntrada.Debil, BotonesEntrada.Ninguno, 1);
-            atacando = SimularEquipos(atacando, BotonesEntrada.Asistencia1, BotonesEntrada.Ninguno, 1);
+            var atacando = SimularEquipos(InicialPorEquipos(-5, 5), BotonesEntrada.Debil, BotonesEntrada.Ninguno, 1);
+            atacando = CambiarJugador1(atacando, BotonesEntrada.Asistencia1);
 
-            var saltando = SimularEquipos(InicialPorEquipos(-2, 2), BotonesEntrada.Arriba, BotonesEntrada.Ninguno, 8);
-            saltando = SimularEquipos(saltando, BotonesEntrada.Asistencia1, BotonesEntrada.Ninguno, 1);
+            var saltando = SimularEquipos(InicialPorEquipos(-5, 5), BotonesEntrada.Arriba, BotonesEntrada.Ninguno, 8);
+            saltando = CambiarJugador1(saltando, BotonesEntrada.Asistencia1);
 
             Assert.AreEqual(0, atacando.Equipo1.IndiceActivo);
             Assert.AreEqual(0, saltando.Equipo1.IndiceActivo);
@@ -154,11 +168,12 @@ namespace FgcTag.Pruebas.Nucleo
         {
             var inicial = InicialPorEquipos(-2, 2);
             var conBaja = ConEquipo1(inicial, inicial.Equipo1.ConVidaEnReserva(1, 0));
-            var estado = SimularEquipos(conBaja, BotonesEntrada.Asistencia1, BotonesEntrada.Ninguno, 1);
+            var estado = CambiarJugador1(conBaja, BotonesEntrada.Asistencia1);
 
             Assert.AreEqual(0, estado.Equipo1.IndiceActivo);
 
-            estado = SimularEquipos(estado, BotonesEntrada.Asistencia2, BotonesEntrada.Ninguno, 1);
+            estado = SimularEquipos(estado, BotonesEntrada.Ninguno, BotonesEntrada.Ninguno, 1);
+            estado = CambiarJugador1(estado, BotonesEntrada.Asistencia2);
 
             Assert.AreEqual(2, estado.Equipo1.IndiceActivo);
         }
@@ -166,12 +181,13 @@ namespace FgcTag.Pruebas.Nucleo
         [Test]
         public void QuienEntraNoPuedeBloquearYRecibeElGolpe()
         {
-            var estado = SimularEquipos(InicialPorEquipos(0, 1), BotonesEntrada.Debil, BotonesEntrada.Derecha, 1);
-            estado = SimularEquipos(estado, BotonesEntrada.Ninguno, BotonesEntrada.Derecha, 2);
-            estado = SimularEquipos(estado, BotonesEntrada.Ninguno, BotonesEntrada.Derecha | BotonesEntrada.Asistencia1, 1);
-            estado = SimularEquipos(estado, BotonesEntrada.Ninguno, BotonesEntrada.Derecha, 1);
+            var estado = SimularEquipos(InicialPorEquipos(0, 1), BotonesEntrada.Debil, BotonesEntrada.Derecha | BotonesEntrada.Asistencia1, 1);
+            estado = SimularEquipos(estado, BotonesEntrada.Ninguno, BotonesEntrada.Derecha | BotonesEntrada.Asistencia1, FramesMantenerParaCambiar - 1);
 
             Assert.AreEqual(1, estado.Equipo2.IndiceActivo);
+
+            estado = SimularEquipos(estado, BotonesEntrada.Ninguno, BotonesEntrada.Derecha, 1);
+
             Assert.AreEqual(AccionLuchador.Hitstun, estado.Duelo.Luchador2.Accion);
             Assert.AreEqual(VidaSegundo - 100, estado.Duelo.Luchador2.Vida);
         }
@@ -314,7 +330,7 @@ namespace FgcTag.Pruebas.Nucleo
         {
             var estado = SimularPseudoaleatorio(1530u, 900);
 
-            Assert.AreEqual("A485B22E7197A21A", estado.CalcularSumaVerificacion().ToString());
+            Assert.AreEqual("D9E5B3C6282F8087", estado.CalcularSumaVerificacion().ToString());
         }
     }
 }

@@ -24,6 +24,8 @@ namespace FgcTag.Nucleo.Combate
 
         public readonly ReglasJuggle Juggle;
 
+        public readonly ReglasVidaRecuperable VidaRecuperable;
+
         /// <summary>Duración del reloj de la ronda, en frames de 60 Hz.</summary>
         public readonly int FramesPorRonda;
 
@@ -39,6 +41,7 @@ namespace FgcTag.Nucleo.Combate
             int framesBuferEntradas,
             ReglasDanio danio,
             ReglasJuggle juggle,
+            ReglasVidaRecuperable vidaRecuperable,
             int framesPorRonda,
             int framesEntrada)
         {
@@ -77,6 +80,7 @@ namespace FgcTag.Nucleo.Combate
             FramesBuferEntradas = framesBuferEntradas;
             Danio = danio;
             Juggle = juggle;
+            VidaRecuperable = vidaRecuperable;
             FramesPorRonda = framesPorRonda;
             FramesEntrada = framesEntrada;
         }
@@ -92,6 +96,7 @@ namespace FgcTag.Nucleo.Combate
                 FramesBuferEntradas,
                 Danio,
                 Juggle,
+                VidaRecuperable,
                 FramesPorRonda,
                 FramesEntrada);
     }
