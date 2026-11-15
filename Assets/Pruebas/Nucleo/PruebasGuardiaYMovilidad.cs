@@ -124,7 +124,7 @@ namespace FgcTag.Pruebas.Nucleo
         {
             var estado = GolpearEnElFrame5(Inicial(0, 1), DebilAgachado, AbajoAtrasJugador2);
 
-            Assert.AreEqual(AccionLuchador.Blockstun, estado.Luchador2.Accion);
+            Assert.AreEqual(AccionLuchador.BlockstunAgachado, estado.Luchador2.Accion);
         }
 
         [Test]
@@ -215,7 +215,7 @@ namespace FgcTag.Pruebas.Nucleo
 
             estado = Simular(estado, BotonesEntrada.Ninguno, BotonesEntrada.Ninguno, 1);
 
-            Assert.AreEqual(AccionLuchador.EnAire, estado.Luchador2.Accion);
+            Assert.AreEqual(AccionLuchador.RecuperandoEnAire, estado.Luchador2.Accion);
             Assert.AreEqual(0, estado.Luchador2.GolpesEnCombo);
             Assert.AreEqual(Fijo.Cero, estado.Luchador2.Velocidad.X);
             Assert.IsTrue(estado.Luchador2.Velocidad.Y > Fijo.Cero, "La recuperación da un pequeño salto");
@@ -226,8 +226,75 @@ namespace FgcTag.Pruebas.Nucleo
         {
             var estado = Simular(GolpeCortoAlRivalQueSalta(), BotonesEntrada.Ninguno, BotonesEntrada.Derecha, 8 + 4 + 1);
 
-            Assert.AreEqual(AccionLuchador.EnAire, estado.Luchador2.Accion);
+            Assert.AreEqual(AccionLuchador.RecuperandoEnAire, estado.Luchador2.Accion);
             Assert.AreEqual(Fijo.DesdeFraccion(1, 8), estado.Luchador2.Velocidad.X);
+        }
+
+        [Test]
+        public void LaRecuperacionDuraSusFramesYNoDejaAtacar()
+        {
+            var estado = Simular(ConJugador2RecuperandoseEnElAire(Inicial(-5, 5), 8), BotonesEntrada.Ninguno, BotonesEntrada.Debil, 1);
+            estado = Simular(estado, BotonesEntrada.Ninguno, BotonesEntrada.Ninguno, 14);
+
+            Assert.AreEqual(AccionLuchador.RecuperandoEnAire, estado.Luchador2.Accion);
+
+            estado = Simular(estado, BotonesEntrada.Ninguno, BotonesEntrada.Ninguno, 1);
+
+            Assert.AreEqual(AccionLuchador.EnAire, estado.Luchador2.Accion);
+
+            estado = Simular(estado, BotonesEntrada.Ninguno, BotonesEntrada.Debil, 1);
+
+            Assert.AreEqual(AccionLuchador.AtacandoEnAire, estado.Luchador2.Accion);
+        }
+
+        [Test]
+        public void LosPrimerosFramesDeLaRecuperacionSonInvencibles()
+        {
+            var estado = GolpearEnElFrame5(ConJugador2RecuperandoseEnElAire(Inicial(0, 1), 1), BotonesEntrada.Debil, BotonesEntrada.Ninguno);
+            estado = Simular(estado, BotonesEntrada.Ninguno, BotonesEntrada.Ninguno, 2);
+
+            Assert.IsFalse(estado.Luchador1.GolpeConectado);
+            Assert.AreEqual(AccionLuchador.RecuperandoEnAire, estado.Luchador2.Accion);
+            Assert.AreEqual(VidaMaxima, estado.Luchador2.Vida);
+        }
+
+        [Test]
+        public void PasadaLaInvencibilidadLaRecuperacionSePuedeGolpear()
+        {
+            var estado = Simular(ConJugador2RecuperandoseEnElAire(Inicial(0, 1), 1), BotonesEntrada.Ninguno, BotonesEntrada.Ninguno, 4);
+            estado = GolpearEnElFrame5(estado, BotonesEntrada.Debil, BotonesEntrada.Ninguno);
+
+            Assert.AreEqual(AccionLuchador.GolpeadoEnAire, estado.Luchador2.Accion);
+            Assert.AreEqual(1, estado.Luchador2.GolpesEnCombo);
+        }
+
+        [Test]
+        public void PasadaLaInvencibilidadLaRecuperacionPuedeBloquear()
+        {
+            var estado = Simular(ConJugador2RecuperandoseEnElAire(Inicial(0, 1), 1), BotonesEntrada.Ninguno, AtrasJugador2, 4);
+            estado = GolpearEnElFrame5(estado, BotonesEntrada.Debil, AtrasJugador2);
+
+            Assert.AreEqual(AccionLuchador.BloqueandoEnAire, estado.Luchador2.Accion);
+        }
+
+        [Test]
+        public void BloquearUnGolpeBajoDejaLaPosturaAgachada()
+        {
+            var bajo = GolpearEnElFrame5(Inicial(0, 1), DebilAgachado, AbajoAtrasJugador2);
+            var dePie = GolpearEnElFrame5(Inicial(0, 1), BotonesEntrada.Debil, AtrasJugador2);
+
+            Assert.AreEqual(AccionLuchador.BlockstunAgachado, bajo.Luchador2.Accion);
+            Assert.AreEqual(Fijo.Medio, Parametros.CajaDanio(bajo.Luchador2).MedioAlto);
+            Assert.AreEqual(AccionLuchador.Blockstun, dePie.Luchador2.Accion);
+        }
+
+        [Test]
+        public void ElBloqueoBajoTerminaYDevuelveElControl()
+        {
+            var estado = GolpearEnElFrame5(Inicial(0, 1), DebilAgachado, AbajoAtrasJugador2);
+            estado = Simular(estado, BotonesEntrada.Abajo, BotonesEntrada.Abajo, 8 + 10 + 1);
+
+            Assert.AreEqual(AccionLuchador.Agachado, estado.Luchador2.Accion);
         }
 
         [Test]

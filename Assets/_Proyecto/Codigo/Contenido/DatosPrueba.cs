@@ -32,7 +32,7 @@ namespace FgcTag.Contenido
             activos: 3,
             recuperacion: 9,
             hitstun: 14,
-            hitstunAereo: 18,
+            hitstunAereo: 20,
             blockstun: 10,
             hitstop: 8,
             danio: 300,
@@ -52,7 +52,7 @@ namespace FgcTag.Contenido
             activos: 3,
             recuperacion: 14,
             hitstun: 17,
-            hitstunAereo: 20,
+            hitstunAereo: 22,
             blockstun: 13,
             hitstop: 10,
             danio: 600,
@@ -72,7 +72,7 @@ namespace FgcTag.Contenido
             activos: 4,
             recuperacion: 20,
             hitstun: 21,
-            hitstunAereo: 22,
+            hitstunAereo: 24,
             blockstun: 16,
             hitstop: 12,
             danio: 900,
@@ -89,7 +89,7 @@ namespace FgcTag.Contenido
             activos: 3,
             recuperacion: 9,
             hitstun: 13,
-            hitstunAereo: 18,
+            hitstunAereo: 20,
             blockstun: 10,
             hitstop: 8,
             danio: 250,
@@ -107,7 +107,7 @@ namespace FgcTag.Contenido
             activos: 3,
             recuperacion: 15,
             hitstun: 17,
-            hitstunAereo: 20,
+            hitstunAereo: 22,
             blockstun: 13,
             hitstop: 10,
             danio: 550,
@@ -125,7 +125,7 @@ namespace FgcTag.Contenido
             activos: 4,
             recuperacion: 22,
             hitstun: 21,
-            hitstunAereo: 22,
+            hitstunAereo: 24,
             blockstun: 16,
             hitstop: 12,
             danio: 850,
@@ -218,7 +218,8 @@ namespace FgcTag.Contenido
         /// Un rival golpeado en el aire rebota hacia arriba con 0.10 por frame; cae con gravedad
         /// 0.012 más 0.0015 por cada golpe del combo, y al tocar el suelo queda 40 frames derribado.
         /// El aturdimiento aéreo de cada golpe dura 2 frames menos por golpe del combo (mínimo 12);
-        /// al agotarse, el rival se recupera en el aire con un pequeño salto.
+        /// al agotarse, el rival se recupera en el aire con un pequeño salto. La recuperación dura
+        /// 16 frames: los 8 primeros es invencible y en los 8 restantes puede bloquear, pero no atacar.
         /// </summary>
         public static readonly ReglasJuggle JuggleCajasGrises = new ReglasJuggle(
             impulsoAlGolpear: Fijo.DesdeFraccion(10, 100),
@@ -228,7 +229,9 @@ namespace FgcTag.Contenido
             reduccionAturdimientoPorGolpe: 2,
             aturdimientoMinimo: 12,
             velocidadRecuperacion: Fijo.DesdeFraccion(5, 100),
-            impulsoRecuperacion: Fijo.DesdeFraccion(12, 100));
+            impulsoRecuperacion: Fijo.DesdeFraccion(12, 100),
+            framesRecuperacion: 16,
+            framesRecuperacionInvencible: 8);
 
         public static readonly MedidasCajaDanio CajaDanioCajaGris = new MedidasCajaDanio(
             medioAncho: Fijo.DesdeFraccion(4, 10),

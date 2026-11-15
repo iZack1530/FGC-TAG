@@ -45,6 +45,15 @@ namespace FgcTag.Nucleo.Combate
 
         /// <summary>Aturdido en el aire por un golpe bloqueado; sigue la trayectoria del salto.</summary>
         BloqueandoEnAire = 15,
+
+        /// <summary>
+        /// Recuperándose en el aire tras un combo: invencible al principio; después puede bloquear,
+        /// pero no atacar hasta que termina.
+        /// </summary>
+        RecuperandoEnAire = 16,
+
+        /// <summary>Aturdido en el suelo por un golpe bloqueado con la guardia baja.</summary>
+        BlockstunAgachado = 17,
     }
 
     public static class EstadosAccion
@@ -62,24 +71,36 @@ namespace FgcTag.Nucleo.Combate
 
         /// <summary>Se puede bloquear con control en tierra, o encadenando bloqueos mientras dura el blockstun.</summary>
         public static bool PuedeBloquear(AccionLuchador accion) =>
-            TieneControlEnTierra(accion) || accion == AccionLuchador.Blockstun;
+            TieneControlEnTierra(accion) ||
+            accion == AccionLuchador.Blockstun ||
+            accion == AccionLuchador.BlockstunAgachado;
 
         public static bool EstaEnElAire(AccionLuchador accion) =>
             accion == AccionLuchador.EnAire ||
             accion == AccionLuchador.AtacandoEnAire ||
             accion == AccionLuchador.GolpeadoEnAire ||
-            accion == AccionLuchador.BloqueandoEnAire;
+            accion == AccionLuchador.BloqueandoEnAire ||
+            accion == AccionLuchador.RecuperandoEnAire;
 
-        /// <summary>En el aire se bloquea durante un salto libre, o encadenando bloqueos; no mientras se ataca.</summary>
+        /// <summary>
+        /// En el aire se bloquea durante un salto libre, encadenando bloqueos o al recuperarse de
+        /// un combo; no mientras se ataca.
+        /// </summary>
         public static bool PuedeBloquearEnAire(AccionLuchador accion) =>
-            accion == AccionLuchador.EnAire || accion == AccionLuchador.BloqueandoEnAire;
+            accion == AccionLuchador.EnAire ||
+            accion == AccionLuchador.BloqueandoEnAire ||
+            accion == AccionLuchador.RecuperandoEnAire;
 
         public static bool EstaBloqueando(AccionLuchador accion) =>
-            accion == AccionLuchador.Blockstun || accion == AccionLuchador.BloqueandoEnAire;
+            accion == AccionLuchador.Blockstun ||
+            accion == AccionLuchador.BlockstunAgachado ||
+            accion == AccionLuchador.BloqueandoEnAire;
 
         /// <summary>Posturas bajas: la caja de daño es la de agachado.</summary>
         public static bool EstaAgachado(AccionLuchador accion) =>
-            accion == AccionLuchador.Agachado || accion == AccionLuchador.AtacandoAgachado;
+            accion == AccionLuchador.Agachado ||
+            accion == AccionLuchador.AtacandoAgachado ||
+            accion == AccionLuchador.BlockstunAgachado;
 
         public static bool EstaAtacando(AccionLuchador accion) =>
             accion == AccionLuchador.Atacando ||
@@ -108,6 +129,8 @@ namespace FgcTag.Nucleo.Combate
             accion == AccionLuchador.Hitstun || accion == AccionLuchador.GolpeadoEnAire;
 
         public static bool EstaAturdido(AccionLuchador accion) =>
-            accion == AccionLuchador.Hitstun || accion == AccionLuchador.Blockstun;
+            accion == AccionLuchador.Hitstun ||
+            accion == AccionLuchador.Blockstun ||
+            accion == AccionLuchador.BlockstunAgachado;
     }
 }

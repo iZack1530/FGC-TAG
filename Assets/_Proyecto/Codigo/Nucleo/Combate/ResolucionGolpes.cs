@@ -15,8 +15,8 @@ namespace FgcTag.Nucleo.Combate
             in EntradasFrame entradas,
             in ConfiguracionCombate configuracion)
         {
-            var golpea1 = Conecta(luchador1, configuracion.Jugador1, luchador2, configuracion.Jugador2);
-            var golpea2 = Conecta(luchador2, configuracion.Jugador2, luchador1, configuracion.Jugador1);
+            var golpea1 = Conecta(luchador1, configuracion.Jugador1, luchador2, configuracion.Jugador2, configuracion.Juggle);
+            var golpea2 = Conecta(luchador2, configuracion.Jugador2, luchador1, configuracion.Jugador1, configuracion.Juggle);
 
             var recibido1 = golpea2
                 ? RecibirGolpe(luchador1, luchador2, entradas.Jugador1, configuracion.Jugador2.MovimientoEnCurso(luchador2), configuracion)
@@ -41,9 +41,10 @@ namespace FgcTag.Nucleo.Combate
             in EstadoLuchador atacante,
             in ParametrosLuchador parametrosAtacante,
             in EstadoLuchador defensor,
-            in ParametrosLuchador parametrosDefensor)
+            in ParametrosLuchador parametrosDefensor,
+            in ReglasJuggle juggle)
         {
-            if (atacante.GolpeConectado || EstadosAccion.EsInvulnerable(defensor.Accion))
+            if (atacante.GolpeConectado || EstadosAccion.EsInvulnerable(defensor.Accion) || juggle.EsInvencibleAlRecuperarse(defensor))
             {
                 return false;
             }
@@ -107,7 +108,7 @@ namespace FgcTag.Nucleo.Combate
                     .ConVida(VidaTrasBloqueo(defensor, configuracion.Danio.AlBloquear(movimiento.Danio)))
                     .ConGolpesEnCombo(0)
                     .ConVelocidad(new VectorFijo(movimiento.RetrocesoAlBloquear * sentidoRetroceso, Fijo.Cero))
-                    .ConAccionNueva(AccionLuchador.Blockstun)
+                    .ConAccionNueva(guardiaAgachada ? AccionLuchador.BlockstunAgachado : AccionLuchador.Blockstun)
                     .ConAturdimiento(movimiento.Blockstun);
             }
 

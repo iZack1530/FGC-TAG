@@ -34,6 +34,12 @@ namespace FgcTag.Nucleo.Combate
         /// <summary>Velocidad vertical al recuperarse en el aire: un pequeño salto para reorientarse.</summary>
         public readonly Fijo ImpulsoRecuperacion;
 
+        /// <summary>Frames que dura la recuperación en el aire; hasta que termina no se puede atacar.</summary>
+        public readonly int FramesRecuperacion;
+
+        /// <summary>Primeros frames de la recuperación en los que ningún golpe conecta; después ya se puede bloquear.</summary>
+        public readonly int FramesRecuperacionInvencible;
+
         public ReglasJuggle(
             Fijo impulsoAlGolpear,
             Fijo gravedad,
@@ -42,8 +48,15 @@ namespace FgcTag.Nucleo.Combate
             int reduccionAturdimientoPorGolpe,
             int aturdimientoMinimo,
             Fijo velocidadRecuperacion,
-            Fijo impulsoRecuperacion)
+            Fijo impulsoRecuperacion,
+            int framesRecuperacion,
+            int framesRecuperacionInvencible)
         {
+            if (framesRecuperacion < 1 || framesRecuperacionInvencible < 0 || framesRecuperacionInvencible > framesRecuperacion)
+            {
+                throw new ArgumentOutOfRangeException(nameof(framesRecuperacion), "La recuperación dura al menos 1 frame y su parte invencible no puede ser más larga que ella.");
+            }
+
             if (reduccionAturdimientoPorGolpe < 0 || aturdimientoMinimo < 1)
             {
                 throw new ArgumentOutOfRangeException(nameof(aturdimientoMinimo), "El aturdimiento mínimo dura al menos 1 frame y su reducción no puede ser negativa.");
@@ -77,7 +90,13 @@ namespace FgcTag.Nucleo.Combate
             AturdimientoMinimo = aturdimientoMinimo;
             VelocidadRecuperacion = velocidadRecuperacion;
             ImpulsoRecuperacion = impulsoRecuperacion;
+            FramesRecuperacion = framesRecuperacion;
+            FramesRecuperacionInvencible = framesRecuperacionInvencible;
         }
+
+        /// <summary>El luchador está en los primeros frames, invencibles, de su recuperación en el aire.</summary>
+        public bool EsInvencibleAlRecuperarse(in EstadoLuchador luchador) =>
+            luchador.Accion == AccionLuchador.RecuperandoEnAire && luchador.FramesEnAccion < FramesRecuperacionInvencible;
 
         /// <param name="golpesEnCombo">Posición del golpe dentro del combo; 1 es el primero.</param>
         public int AturdimientoCon(int hitstunAereo, int golpesEnCombo)

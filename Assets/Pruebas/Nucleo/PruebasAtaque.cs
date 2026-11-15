@@ -186,7 +186,7 @@ namespace FgcTag.Pruebas.Nucleo
         {
             var estado = SimularHastaElImpacto(BotonesEntrada.Abajo | BotonesEntrada.Derecha);
 
-            Assert.AreEqual(AccionLuchador.Blockstun, estado.Luchador2.Accion);
+            Assert.AreEqual(AccionLuchador.BlockstunAgachado, estado.Luchador2.Accion);
         }
 
         [Test]

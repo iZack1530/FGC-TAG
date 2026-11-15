@@ -172,6 +172,7 @@ namespace FgcTag.Presentacion
                 {
                     case AccionLuchador.Agachado:
                     case AccionLuchador.AtacandoAgachado:
+                    case AccionLuchador.BlockstunAgachado:
                         return 0.55f;
                     case AccionLuchador.PreSalto:
                         return 0.85f;

@@ -76,7 +76,7 @@ La última línea del HUD mide la ventaja en frames del último golpe: cuántos 
 
 La guardia tiene altura. Los golpes agachados son bajos y solo se bloquean agachado; los ataques aéreos son altos y solo se bloquean de pie; los golpes de pie y el lanzador se bloquean de las dos formas. Con la guardia equivocada, el golpe entra. En el aire se bloquea cualquier golpe durante un salto libre, pero no mientras se ataca.
 
-Un rival golpeado en el aire se recupera solo cuando se agota su aturdimiento aéreo, que se acorta con cada golpe del combo: da un pequeño salto hacia la dirección que mantenga y recobra el control. Si llega antes al suelo, queda derribado.
+Un rival golpeado en el aire se recupera solo cuando se agota su aturdimiento aéreo (de 20 a 30 frames según el golpe, 2 menos por cada golpe del combo): da un pequeño salto hacia la dirección que mantenga. La recuperación dura 16 frames: en los 8 primeros es invencible y en los 8 restantes puede bloquear, pero no atacar. Si llega antes al suelo, queda derribado.
 
 Saltar hasta 8 frames después de haber estado agachado es un supersalto, el doble de alto que el salto normal. El salto que cancela el lanzador es siempre normal.
 
