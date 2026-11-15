@@ -202,7 +202,22 @@ namespace FgcTag.Arranque
             $"{etiqueta}: {(MedidorVentaja.TieneControl(luchador) ? "LIBRE" : "sin control")}   {DescribirAccion(luchador)} ({luchador.FramesEnAccion} f)   hitstop {luchador.FramesHitstop}   aturdido {luchador.FramesAturdimiento}   combo {luchador.GolpesEnCombo}   vida {luchador.Vida}   búfer {DescribirBufer(luchador)}   pos {luchador.Posicion}   vel {luchador.Velocidad}   mira {(luchador.MiraDerecha ? "derecha" : "izquierda")}";
 
         private static string DescribirAccion(in EstadoLuchador luchador) =>
-            EstadosAccion.EstaAtacando(luchador.Accion) ? $"Atacando: {NombreAtaque(luchador)}" : luchador.Accion.ToString();
+            EstadosAccion.EstaAtacando(luchador.Accion)
+                ? $"Atacando: {NombreAtaque(luchador)}"
+                : luchador.Supersalto ? $"{luchador.Accion} (supersalto)" : luchador.Accion.ToString();
+
+        private static string DescribirAltura(AlturaGolpe altura)
+        {
+            switch (altura)
+            {
+                case AlturaGolpe.Bajo:
+                    return "bajo: se bloquea agachado";
+                case AlturaGolpe.Alto:
+                    return "alto: se bloquea de pie";
+                default:
+                    return "medio: se bloquea de pie o agachado";
+            }
+        }
 
         private static string NombreAtaque(in EstadoLuchador luchador)
         {
@@ -211,14 +226,22 @@ namespace FgcTag.Arranque
                 return "Lanzador";
             }
 
-            return luchador.Accion == AccionLuchador.AtacandoEnAire ? $"{luchador.Ataque} aéreo" : luchador.Ataque.ToString();
+            switch (EstadosAccion.PosturaDeAtaque(luchador.Accion))
+            {
+                case PosturaAtaque.Aire:
+                    return $"{luchador.Ataque} aéreo";
+                case PosturaAtaque.Agachado:
+                    return $"{luchador.Ataque} agachado";
+                default:
+                    return luchador.Ataque.ToString();
+            }
         }
 
         private static string DescribirBufer(in EstadoLuchador luchador) =>
             luchador.TieneAtaqueEnBufer ? $"{luchador.AtaqueEnBufer} ({luchador.FramesBufer} f)" : "vacío";
 
         private static string DescribirMovimiento(string nombre, in DatosMovimiento movimiento) =>
-            $"{nombre}{(movimiento.Lanza ? " (lanza)" : string.Empty)}: arranque {movimiento.Arranque}   activos {movimiento.Activos}   recuperación {movimiento.Recuperacion}   hitstop {movimiento.Hitstop}   daño {movimiento.Danio}   ventaja {movimiento.VentajaAlGolpear:+0;-0;0} al golpear, {movimiento.VentajaAlBloquear:+0;-0;0} al bloquear";
+            $"{nombre}{(movimiento.Lanza ? " (lanza)" : string.Empty)} [{DescribirAltura(movimiento.Altura)}]: arranque {movimiento.Arranque}   activos {movimiento.Activos}   recuperación {movimiento.Recuperacion}   hitstop {movimiento.Hitstop}   daño {movimiento.Danio}   ventaja {movimiento.VentajaAlGolpear:+0;-0;0} al golpear, {movimiento.VentajaAlBloquear:+0;-0;0} al bloquear";
 
         private static void ColocarCamara()
         {

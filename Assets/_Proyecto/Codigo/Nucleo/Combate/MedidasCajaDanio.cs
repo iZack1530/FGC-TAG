@@ -26,13 +26,12 @@ namespace FgcTag.Nucleo.Combate
 
         public Fijo MedioAlto(AccionLuchador accion)
         {
-            switch (accion)
+            if (EstadosAccion.EstaAgachado(accion))
             {
-                case AccionLuchador.Agachado:
-                    return MedioAltoAgachado;
-                default:
-                    return EstadosAccion.EstaEnElAire(accion) ? MedioAltoAire : MedioAltoDePie;
+                return MedioAltoAgachado;
             }
+
+            return EstadosAccion.EstaEnElAire(accion) ? MedioAltoAire : MedioAltoDePie;
         }
     }
 }

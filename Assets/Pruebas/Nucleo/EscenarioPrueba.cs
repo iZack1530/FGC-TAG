@@ -22,6 +22,7 @@ namespace FgcTag.Pruebas.Nucleo
             activos: 3,
             recuperacion: 9,
             hitstun: 14,
+            hitstunAereo: 60,
             blockstun: 10,
             hitstop: 8,
             danio: 100,
@@ -35,6 +36,7 @@ namespace FgcTag.Pruebas.Nucleo
             activos: 3,
             recuperacion: 14,
             hitstun: 17,
+            hitstunAereo: 60,
             blockstun: 13,
             hitstop: 10,
             danio: 200,
@@ -48,12 +50,62 @@ namespace FgcTag.Pruebas.Nucleo
             activos: 4,
             recuperacion: 20,
             hitstun: 21,
+            hitstunAereo: 60,
             blockstun: 16,
             hitstop: 12,
             danio: 300,
             retrocesoAlGolpear: Fijo.DesdeFraccion(1, 8),
             retrocesoAlBloquear: Fijo.DesdeFraccion(1, 16),
             cajaGolpe: new CajaColision(new VectorFijo(Fijo.DesdeFraccion(3, 2), Fijo.Uno), Fijo.DesdeFraccion(3, 2), Fijo.DesdeFraccion(1, 4)));
+
+        /// <summary>
+        /// Golpe bajo: mismos tiempos que el débil de pie, pero solo se bloquea agachado. Es el
+        /// único golpe con aturdimiento aéreo corto (4 frames): sirve para probar la recuperación
+        /// en el aire; con los demás (60), el rival siempre llega antes al suelo.
+        /// </summary>
+        public static readonly DatosMovimiento GolpeDebilAgachado = new DatosMovimiento(
+            arranque: 4,
+            activos: 3,
+            recuperacion: 9,
+            hitstun: 14,
+            hitstunAereo: 4,
+            blockstun: 10,
+            hitstop: 8,
+            danio: 100,
+            retrocesoAlGolpear: Fijo.DesdeFraccion(1, 8),
+            retrocesoAlBloquear: Fijo.DesdeFraccion(1, 16),
+            cajaGolpe: new CajaColision(new VectorFijo(Fijo.Uno, Fijo.DesdeFraccion(1, 4)), Fijo.Medio, Fijo.DesdeFraccion(1, 4)),
+            altura: AlturaGolpe.Bajo);
+
+        /// <summary>Golpe bajo con los tiempos del medio de pie.</summary>
+        public static readonly DatosMovimiento GolpeMedioAgachado = new DatosMovimiento(
+            arranque: 6,
+            activos: 3,
+            recuperacion: 14,
+            hitstun: 17,
+            hitstunAereo: 60,
+            blockstun: 13,
+            hitstop: 10,
+            danio: 200,
+            retrocesoAlGolpear: Fijo.DesdeFraccion(1, 8),
+            retrocesoAlBloquear: Fijo.DesdeFraccion(1, 16),
+            cajaGolpe: new CajaColision(new VectorFijo(Fijo.Uno, Fijo.DesdeFraccion(1, 4)), Fijo.Uno, Fijo.DesdeFraccion(1, 4)),
+            altura: AlturaGolpe.Bajo);
+
+        /// <summary>Golpe bajo con los tiempos del fuerte de pie.</summary>
+        public static readonly DatosMovimiento GolpeFuerteAgachado = new DatosMovimiento(
+            arranque: 9,
+            activos: 4,
+            recuperacion: 20,
+            hitstun: 21,
+            hitstunAereo: 60,
+            blockstun: 16,
+            hitstop: 12,
+            danio: 300,
+            retrocesoAlGolpear: Fijo.DesdeFraccion(1, 8),
+            retrocesoAlBloquear: Fijo.DesdeFraccion(1, 16),
+            cajaGolpe: new CajaColision(new VectorFijo(Fijo.DesdeFraccion(3, 2), Fijo.DesdeFraccion(1, 4)), Fijo.DesdeFraccion(3, 2), Fijo.DesdeFraccion(1, 4)),
+            altura: AlturaGolpe.Bajo);
 
         /// <summary>Un ataque pulsado se recuerda 5 frames, contando el de la pulsación.</summary>
         public const int FramesBufer = 5;
@@ -67,6 +119,7 @@ namespace FgcTag.Pruebas.Nucleo
             activos: 4,
             recuperacion: 20,
             hitstun: 20,
+            hitstunAereo: 60,
             blockstun: 15,
             hitstop: 12,
             danio: 250,
@@ -82,12 +135,14 @@ namespace FgcTag.Pruebas.Nucleo
             activos: 4,
             recuperacion: 6,
             hitstun: 14,
+            hitstunAereo: 60,
             blockstun: 10,
             hitstop: 8,
             danio: 100,
             retrocesoAlGolpear: Fijo.DesdeFraccion(1, 16),
             retrocesoAlBloquear: Fijo.DesdeFraccion(1, 16),
-            cajaGolpe: CajaGolpeAerea);
+            cajaGolpe: CajaGolpeAerea,
+            altura: AlturaGolpe.Alto);
 
         /// <summary>Dura 20 frames y golpea en el frame 7.</summary>
         public static readonly DatosMovimiento GolpeMedioAereo = new DatosMovimiento(
@@ -95,12 +150,14 @@ namespace FgcTag.Pruebas.Nucleo
             activos: 4,
             recuperacion: 10,
             hitstun: 17,
+            hitstunAereo: 60,
             blockstun: 13,
             hitstop: 10,
             danio: 200,
             retrocesoAlGolpear: Fijo.DesdeFraccion(1, 16),
             retrocesoAlBloquear: Fijo.DesdeFraccion(1, 16),
-            cajaGolpe: CajaGolpeAerea);
+            cajaGolpe: CajaGolpeAerea,
+            altura: AlturaGolpe.Alto);
 
         /// <summary>Dura 26 frames y golpea en el frame 9.</summary>
         public static readonly DatosMovimiento GolpeFuerteAereo = new DatosMovimiento(
@@ -108,12 +165,14 @@ namespace FgcTag.Pruebas.Nucleo
             activos: 4,
             recuperacion: 14,
             hitstun: 21,
+            hitstunAereo: 60,
             blockstun: 16,
             hitstop: 12,
             danio: 300,
             retrocesoAlGolpear: Fijo.DesdeFraccion(1, 16),
             retrocesoAlBloquear: Fijo.DesdeFraccion(1, 16),
-            cajaGolpe: CajaGolpeAerea);
+            cajaGolpe: CajaGolpeAerea,
+            altura: AlturaGolpe.Alto);
 
         /// <summary>
         /// Un rival golpeado en el aire sube con velocidad 1/8; su gravedad es 1/32 más 1/128 por
@@ -123,7 +182,11 @@ namespace FgcTag.Pruebas.Nucleo
             impulsoAlGolpear: Fijo.DesdeFraccion(1, 8),
             gravedad: Fijo.DesdeFraccion(1, 32),
             gravedadExtraPorGolpe: Fijo.DesdeFraccion(1, 128),
-            framesDerribado: 30);
+            framesDerribado: 30,
+            reduccionAturdimientoPorGolpe: 2,
+            aturdimientoMinimo: 4,
+            velocidadRecuperacion: Fijo.DesdeFraccion(1, 8),
+            impulsoRecuperacion: Fijo.DesdeFraccion(1, 4));
 
         public const int VidaMaxima = 1000;
 
@@ -147,7 +210,9 @@ namespace FgcTag.Pruebas.Nucleo
                 velocidadVertical: Fijo.DesdeFraccion(2, 5),
                 gravedad: Fijo.DesdeFraccion(1, 50),
                 velocidadAdelante: Fijo.DesdeFraccion(1, 10),
-                velocidadAtras: Fijo.DesdeFraccion(1, 10)),
+                velocidadAtras: Fijo.DesdeFraccion(1, 10),
+                velocidadVerticalSupersalto: Fijo.DesdeFraccion(3, 5),
+                ventanaSupersalto: 6),
             medidasDanio: new MedidasCajaDanio(
                 medioAncho: Fijo.Medio,
                 medioAltoDePie: Fijo.Uno,
@@ -158,6 +223,9 @@ namespace FgcTag.Pruebas.Nucleo
                 medio: GolpeMedio,
                 fuerte: GolpeFuerte,
                 lanzador: Lanzador,
+                debilAgachado: GolpeDebilAgachado,
+                medioAgachado: GolpeMedioAgachado,
+                fuerteAgachado: GolpeFuerteAgachado,
                 debilAereo: GolpeDebilAereo,
                 medioAereo: GolpeMedioAereo,
                 fuerteAereo: GolpeFuerteAereo));

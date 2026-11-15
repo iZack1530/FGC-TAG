@@ -171,6 +171,7 @@ namespace FgcTag.Presentacion
                 switch (accion)
                 {
                     case AccionLuchador.Agachado:
+                    case AccionLuchador.AtacandoAgachado:
                         return 0.55f;
                     case AccionLuchador.PreSalto:
                         return 0.85f;

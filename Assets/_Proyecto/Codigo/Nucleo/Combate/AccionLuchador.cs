@@ -39,6 +39,12 @@ namespace FgcTag.Nucleo.Combate
 
         /// <summary>En el suelo tras caer golpeado: invulnerable hasta levantarse.</summary>
         Derribado = 13,
+
+        /// <summary>Ejecutando un ataque agachado; el lanzador no tiene versión agachada.</summary>
+        AtacandoAgachado = 14,
+
+        /// <summary>Aturdido en el aire por un golpe bloqueado; sigue la trayectoria del salto.</summary>
+        BloqueandoEnAire = 15,
     }
 
     public static class EstadosAccion
@@ -61,10 +67,37 @@ namespace FgcTag.Nucleo.Combate
         public static bool EstaEnElAire(AccionLuchador accion) =>
             accion == AccionLuchador.EnAire ||
             accion == AccionLuchador.AtacandoEnAire ||
-            accion == AccionLuchador.GolpeadoEnAire;
+            accion == AccionLuchador.GolpeadoEnAire ||
+            accion == AccionLuchador.BloqueandoEnAire;
+
+        /// <summary>En el aire se bloquea durante un salto libre, o encadenando bloqueos; no mientras se ataca.</summary>
+        public static bool PuedeBloquearEnAire(AccionLuchador accion) =>
+            accion == AccionLuchador.EnAire || accion == AccionLuchador.BloqueandoEnAire;
+
+        public static bool EstaBloqueando(AccionLuchador accion) =>
+            accion == AccionLuchador.Blockstun || accion == AccionLuchador.BloqueandoEnAire;
+
+        /// <summary>Posturas bajas: la caja de daño es la de agachado.</summary>
+        public static bool EstaAgachado(AccionLuchador accion) =>
+            accion == AccionLuchador.Agachado || accion == AccionLuchador.AtacandoAgachado;
 
         public static bool EstaAtacando(AccionLuchador accion) =>
-            accion == AccionLuchador.Atacando || accion == AccionLuchador.AtacandoEnAire;
+            accion == AccionLuchador.Atacando ||
+            accion == AccionLuchador.AtacandoAgachado ||
+            accion == AccionLuchador.AtacandoEnAire;
+
+        public static PosturaAtaque PosturaDeAtaque(AccionLuchador accion)
+        {
+            switch (accion)
+            {
+                case AccionLuchador.AtacandoEnAire:
+                    return PosturaAtaque.Aire;
+                case AccionLuchador.AtacandoAgachado:
+                    return PosturaAtaque.Agachado;
+                default:
+                    return PosturaAtaque.DePie;
+            }
+        }
 
         /// <summary>Acciones en las que ningún golpe puede conectar.</summary>
         public static bool EsInvulnerable(AccionLuchador accion) =>

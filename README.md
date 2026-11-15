@@ -56,10 +56,12 @@ El reparto de trabajo es: **VS Code** para leer y editar código y para Git; **U
 | --- | --- | --- | --- |
 | Moverse | W A S D | Flechas | Cruceta o palanca izquierda |
 | Saltar (neutral, adelante, atrás) | W, W + D, W + A | Flecha arriba (+ dirección) | Arriba (+ dirección) |
+| Supersalto | S y enseguida W | Flecha abajo y enseguida arriba | Abajo y enseguida arriba |
 | Agacharse | S | Flecha abajo | Abajo |
 | Golpe débil / medio / fuerte | U / I / O | Num 4 / 5 / 6 | Cuadrado-X / Triángulo-Y / Círculo-B |
-| Bloquear | Mantener la dirección que aleja del rival | Igual | Igual |
-| Lanzador (botón Especial, solo en tierra) | J | Num 1 | Equis-A |
+| Bloquear de pie, agachado o en el aire | Mantener la dirección que aleja del rival (con abajo para la guardia baja) | Igual | Igual |
+| Golpes agachados (bajos) | S + U / I / O | Flecha abajo + Num 4 / 5 / 6 | Abajo + botón de golpe |
+| Lanzador (botón Especial, de pie o agachado) | J | Num 1 | Equis-A |
 | Ataques aéreos | U / I / O durante un salto | Num 4 / 5 / 6 | Igual que en tierra |
 | Asistencias (aún sin función) | K / L | Num 2 / 3 | L1 / R1 |
 | Pausar / reanudar la simulación | F1 | | |
@@ -71,6 +73,12 @@ El primer mando conectado es del jugador 1 y el segundo del jugador 2. La esquin
 Un golpe que conecta (golpeado o bloqueado) se cancela en otro más fuerte: Débil → Medio → Fuerte → Lanzador. El lanzador levanta al rival; si golpea, mantener arriba (o arriba y adelante) lo cancela con un salto para seguir el combo en el aire con los ataques aéreos, que también se encadenan de débil a fuerte. Un rival golpeado en el aire cae cada vez más rápido y, al tocar el suelo, queda derribado e invulnerable hasta levantarse. Los ataques pulsados hasta 5 frames antes de poder actuar se guardan en el búfer y salen solos.
 
 La última línea del HUD mide la ventaja en frames del último golpe: cuántos frames antes (+) o después (−) que el rival recupera el control el atacante.
+
+La guardia tiene altura. Los golpes agachados son bajos y solo se bloquean agachado; los ataques aéreos son altos y solo se bloquean de pie; los golpes de pie y el lanzador se bloquean de las dos formas. Con la guardia equivocada, el golpe entra. En el aire se bloquea cualquier golpe durante un salto libre, pero no mientras se ataca.
+
+Un rival golpeado en el aire se recupera solo cuando se agota su aturdimiento aéreo, que se acorta con cada golpe del combo: da un pequeño salto hacia la dirección que mantenga y recobra el control. Si llega antes al suelo, queda derribado.
+
+Saltar hasta 8 frames después de haber estado agachado es un supersalto, el doble de alto que el salto normal. El salto que cancela el lanzador es siempre normal.
 
 Cada luchador tiene 10 000 de vida, con su barra en la parte baja de la pantalla junto al reloj de 99 segundos. El daño de cada golpe de un combo baja 10 puntos porcentuales respecto al anterior, hasta un mínimo del 30%. Un golpe bloqueado hace el 10% de su daño base (daño chip), que nunca noquea. La ronda termina por K.O. o por tiempo; con el tiempo agotado gana quien conserve más vida.
 
