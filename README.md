@@ -63,12 +63,15 @@ El reparto de trabajo es: **VS Code** para leer y editar código y para Git; **U
 | Asistencias (aún sin función) | K / L | Num 2 / 3 | L1 / R1 |
 | Pausar / reanudar la simulación | F1 | | |
 | Avanzar un frame (en pausa) | F2 | | |
+| Empezar una ronda nueva | F3 | | |
 
 El primer mando conectado es del jugador 1 y el segundo del jugador 2. La esquina superior izquierda muestra el frame, la suma de verificación, el estado de cada luchador y la frame data de los tres golpes.
 
 Un golpe que conecta (golpeado o bloqueado) se cancela en otro más fuerte: Débil → Medio → Fuerte. Los ataques pulsados hasta 5 frames antes de poder actuar se guardan en el búfer y salen solos.
 
 La última línea del HUD mide la ventaja en frames del último golpe: cuántos frames antes (+) o después (−) que el rival recupera el control el atacante.
+
+Cada luchador tiene 10 000 de vida, con su barra en la parte baja de la pantalla junto al reloj de 99 segundos. El daño de cada golpe de un combo baja 10 puntos porcentuales respecto al anterior, hasta un mínimo del 30%. La ronda termina por K.O. o por tiempo; con el tiempo agotado gana quien conserve más vida.
 
 Durante los frames activos del ataque se dibuja en rojo su caja de golpe. Mientras dura el hitstop, el atacante se pinta de blanco y el rival de negro.
 

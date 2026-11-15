@@ -28,6 +28,9 @@ namespace FgcTag.Nucleo.Combate
         /// <summary>Frames que ambos luchadores se congelan al conectar, golpee o sea bloqueado.</summary>
         public readonly int Hitstop;
 
+        /// <summary>Vida que quita el golpe como primer golpe de un combo; bloqueado no quita nada.</summary>
+        public readonly int Danio;
+
         /// <summary>Velocidad inicial (unidades por frame) con la que retrocede el rival golpeado.</summary>
         public readonly Fijo RetrocesoAlGolpear;
 
@@ -44,6 +47,7 @@ namespace FgcTag.Nucleo.Combate
             int hitstun,
             int blockstun,
             int hitstop,
+            int danio,
             Fijo retrocesoAlGolpear,
             Fijo retrocesoAlBloquear,
             CajaColision cajaGolpe)
@@ -58,6 +62,11 @@ namespace FgcTag.Nucleo.Combate
                 throw new ArgumentOutOfRangeException(nameof(hitstun), "Hitstun y blockstun duran al menos 1 frame y el hitstop no puede ser negativo.");
             }
 
+            if (danio < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(danio), "El daño no puede ser negativo.");
+            }
+
             if (retrocesoAlGolpear < Fijo.Cero || retrocesoAlBloquear < Fijo.Cero)
             {
                 throw new ArgumentOutOfRangeException(nameof(retrocesoAlGolpear), "El retroceso no puede ser negativo.");
@@ -69,6 +78,7 @@ namespace FgcTag.Nucleo.Combate
             Hitstun = hitstun;
             Blockstun = blockstun;
             Hitstop = hitstop;
+            Danio = danio;
             RetrocesoAlGolpear = retrocesoAlGolpear;
             RetrocesoAlBloquear = retrocesoAlBloquear;
             CajaGolpe = cajaGolpe;

@@ -136,8 +136,10 @@ namespace FgcTag.Pruebas.Nucleo
         {
             var malOrientado = new EstadoPartida(
                 0,
-                EstadoLuchador.EnReposo(VectorFijo.DesdeEnteros(-2, 0), false),
-                EstadoLuchador.EnReposo(VectorFijo.DesdeEnteros(2, 0), true));
+                EstadoLuchador.EnReposo(VectorFijo.DesdeEnteros(-2, 0), false, VidaMaxima),
+                EstadoLuchador.EnReposo(VectorFijo.DesdeEnteros(2, 0), true, VidaMaxima),
+                FramesPorRonda,
+                ResultadoRonda.EnCurso);
 
             var estado = SimuladorCombate.Avanzar(malOrientado, EntradasFrame.Vacias, Configuracion);
 
@@ -151,8 +153,8 @@ namespace FgcTag.Pruebas.Nucleo
             var semillaA = 2026u;
             var semillaB = 2026u;
 
-            var a = SimularPseudoaleatorio(Inicial(-2, 2), ref semillaA, 600);
-            var b = SimularPseudoaleatorio(Inicial(-2, 2), ref semillaB, 600);
+            var a = SimularPseudoaleatorio(Inicial(-1, 1), ref semillaA, 600);
+            var b = SimularPseudoaleatorio(Inicial(-1, 1), ref semillaB, 600);
 
             Assert.AreEqual(a.CalcularSumaVerificacion().Valor, b.CalcularSumaVerificacion().Valor);
         }
@@ -165,10 +167,10 @@ namespace FgcTag.Pruebas.Nucleo
         public void RestaurarYResimularDaElMismoResultadoQueSimularDirecto()
         {
             var semillaDirecta = 77u;
-            var directo = SimularPseudoaleatorio(Inicial(-2, 2), ref semillaDirecta, 600);
+            var directo = SimularPseudoaleatorio(Inicial(-1, 1), ref semillaDirecta, 600);
 
             var semilla = 77u;
-            var guardado = SimularPseudoaleatorio(Inicial(-2, 2), ref semilla, 300);
+            var guardado = SimularPseudoaleatorio(Inicial(-1, 1), ref semilla, 300);
             var semillaGuardada = semilla;
 
             var semillaEquivocada = 999u;
@@ -182,14 +184,16 @@ namespace FgcTag.Pruebas.Nucleo
         /// <summary>
         /// Valor dorado: si cambia, cambió el comportamiento de la simulación y las repeticiones
         /// grabadas dejan de valer. Actualizarlo exige una entrada en el registro de decisiones.
+        /// Los luchadores empiezan a distancia de golpe para que la repetición incluya golpes,
+        /// bloqueos, combos y daño, no solo movimiento.
         /// </summary>
         [Test]
         public void RepeticionDeReferenciaConservaSuSumaDeVerificacion()
         {
             var semilla = 1530u;
-            var estado = SimularPseudoaleatorio(Inicial(-2, 2), ref semilla, 600);
+            var estado = SimularPseudoaleatorio(Inicial(-1, 1), ref semilla, 600);
 
-            Assert.AreEqual("FA70B7A25EC7B142", estado.CalcularSumaVerificacion().ToString());
+            Assert.AreEqual("34980ECB22EFF344", estado.CalcularSumaVerificacion().ToString());
         }
     }
 }

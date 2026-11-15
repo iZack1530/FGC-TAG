@@ -27,6 +27,9 @@ namespace FgcTag.Nucleo.Combate
 
         /// <summary>Aturdido en el suelo por un golpe bloqueado.</summary>
         Blockstun = 9,
+
+        /// <summary>Sin vida: en el suelo y sin control hasta que empiece otra ronda.</summary>
+        Noqueado = 10,
     }
 
     public static class EstadosAccion

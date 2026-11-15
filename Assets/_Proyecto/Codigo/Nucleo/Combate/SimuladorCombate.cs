@@ -12,11 +12,15 @@ namespace FgcTag.Nucleo.Combate
     /// (caja de golpe contra caja de daño); 5) los luchadores que pueden girar se orientan hacia
     /// el rival. Un luchador en hitstop no actúa: solo descuenta un frame de congelamiento.
     /// Antes de actuar, cada ataque recién pulsado se guarda en el búfer de entradas.
+    /// Al final se descuenta el reloj y se decide la ronda: por K.O. o por tiempo. Con la ronda
+    /// terminada la simulación sigue avanzando, pero ignora las entradas y ya no hay golpes.
     /// </remarks>
     public static class SimuladorCombate
     {
-        public static EstadoPartida Avanzar(in EstadoPartida estado, in EntradasFrame entradas, in ConfiguracionCombate configuracion)
+        public static EstadoPartida Avanzar(in EstadoPartida estado, in EntradasFrame entradasRecibidas, in ConfiguracionCombate configuracion)
         {
+            var entradas = estado.RondaTerminada ? EntradasFrame.Vacias : entradasRecibidas;
+
             var luchador1 = LimitarAlEscenario(
                 AvanzarLuchador(estado.Luchador1, entradas.Jugador1, configuracion.Jugador1, configuracion),
                 configuracion.Jugador1,
@@ -28,10 +32,56 @@ namespace FgcTag.Nucleo.Combate
                 configuracion);
 
             var (empujado1, empujado2) = ResolverEmpuje(luchador1, luchador2, configuracion);
-            var (golpeado1, golpeado2) = ResolverGolpes(empujado1, empujado2, entradas, configuracion);
+            var (golpeado1, golpeado2) = estado.RondaTerminada
+                ? (empujado1, empujado2)
+                : ResolverGolpes(empujado1, empujado2, entradas, configuracion);
             var (orientado1, orientado2) = Orientar(golpeado1, golpeado2);
 
-            return new EstadoPartida(estado.Frame + 1, orientado1, orientado2);
+            if (estado.RondaTerminada)
+            {
+                return new EstadoPartida(estado.Frame + 1, orientado1, orientado2, estado.FramesRestantes, estado.Resultado);
+            }
+
+            var framesRestantes = estado.FramesRestantes > 0 ? estado.FramesRestantes - 1 : 0;
+            var resultado = DecidirRonda(orientado1, orientado2, framesRestantes, configuracion);
+
+            return new EstadoPartida(estado.Frame + 1, orientado1, orientado2, framesRestantes, resultado);
+        }
+
+        /// <summary>
+        /// K.O. si alguien se queda sin vida (doble K.O. es empate). Con el tiempo agotado gana
+        /// quien conserve mayor proporción de su vida máxima.
+        /// </summary>
+        private static ResultadoRonda DecidirRonda(
+            in EstadoLuchador luchador1,
+            in EstadoLuchador luchador2,
+            int framesRestantes,
+            in ConfiguracionCombate configuracion)
+        {
+            if (luchador1.SinVida || luchador2.SinVida)
+            {
+                if (luchador1.SinVida && luchador2.SinVida)
+                {
+                    return ResultadoRonda.Empate;
+                }
+
+                return luchador2.SinVida ? ResultadoRonda.GanaJugador1 : ResultadoRonda.GanaJugador2;
+            }
+
+            if (framesRestantes > 0)
+            {
+                return ResultadoRonda.EnCurso;
+            }
+
+            var proporcion1 = (long)luchador1.Vida * configuracion.Jugador2.VidaMaxima;
+            var proporcion2 = (long)luchador2.Vida * configuracion.Jugador1.VidaMaxima;
+
+            if (proporcion1 == proporcion2)
+            {
+                return ResultadoRonda.Empate;
+            }
+
+            return proporcion1 > proporcion2 ? ResultadoRonda.GanaJugador1 : ResultadoRonda.GanaJugador2;
         }
 
         private static EstadoLuchador AvanzarLuchador(
@@ -108,7 +158,10 @@ namespace FgcTag.Nucleo.Combate
                 case AccionLuchador.Blockstun:
                     return luchador.FramesAturdimiento <= 0
                         ? ControlarEnTierra(luchador.ConVelocidad(VectorFijo.Cero).ConGolpesEnCombo(0), botones, parametros)
-                        : Retroceder(luchador, configuracion.FriccionRetroceso);
+                        : Deslizar(luchador, configuracion.FriccionRetroceso).ConAturdimiento(luchador.FramesAturdimiento - 1);
+
+                case AccionLuchador.Noqueado:
+                    return Deslizar(luchador, configuracion.FriccionRetroceso);
 
                 case AccionLuchador.EnAire:
                     return MoverEnAire(luchador, parametros.Salto);
@@ -163,8 +216,8 @@ namespace FgcTag.Nucleo.Combate
                 .ConX(luchador.Posicion.X + velocidad * direccion);
         }
 
-        /// <summary>Un frame de aturdimiento: el luchador se desliza con su velocidad de retroceso y la fricción la frena.</summary>
-        private static EstadoLuchador Retroceder(in EstadoLuchador luchador, Fijo friccion)
+        /// <summary>Un frame sin control en el suelo: el luchador se desliza con su velocidad de retroceso y la fricción la frena.</summary>
+        private static EstadoLuchador Deslizar(in EstadoLuchador luchador, Fijo friccion)
         {
             var velocidadX = luchador.Velocidad.X;
             var frenada = Fijo.Max(Fijo.Abs(velocidadX) - friccion, Fijo.Cero) * Fijo.Signo(velocidadX);
@@ -172,8 +225,7 @@ namespace FgcTag.Nucleo.Combate
             return luchador
                 .ConAccion(luchador.Accion)
                 .ConX(luchador.Posicion.X + velocidadX)
-                .ConVelocidad(new VectorFijo(frenada, Fijo.Cero))
-                .ConAturdimiento(luchador.FramesAturdimiento - 1);
+                .ConVelocidad(new VectorFijo(frenada, Fijo.Cero));
         }
 
         /// <summary>
@@ -199,11 +251,13 @@ namespace FgcTag.Nucleo.Combate
 
             if (posicion.Y <= Fijo.Cero)
             {
-                var accionAlCaer = salto.FramesAterrizaje > 0 ? AccionLuchador.Aterrizaje : AccionLuchador.Quieto;
+                var accionAlCaer = luchador.SinVida
+                    ? AccionLuchador.Noqueado
+                    : salto.FramesAterrizaje > 0 ? AccionLuchador.Aterrizaje : AccionLuchador.Quieto;
 
                 return luchador
                     .ConPosicion(posicion.ConY(Fijo.Cero))
-                    .ConVelocidad(VectorFijo.Cero)
+                    .ConVelocidad(luchador.SinVida ? luchador.Velocidad.ConY(Fijo.Cero) : VectorFijo.Cero)
                     .ConAccionNueva(accionAlCaer);
             }
 
@@ -291,11 +345,11 @@ namespace FgcTag.Nucleo.Combate
             var golpea2 = Conecta(luchador2, configuracion.Jugador2, luchador1, configuracion.Jugador1);
 
             var resultado1 = golpea2
-                ? RecibirGolpe(luchador1, luchador2, entradas.Jugador1, configuracion.Jugador2.Movimiento(luchador2.Ataque))
+                ? RecibirGolpe(luchador1, luchador2, entradas.Jugador1, configuracion.Jugador2.Movimiento(luchador2.Ataque), configuracion.Danio)
                 : golpea1 ? MarcarGolpeConectado(luchador1, configuracion.Jugador1.Movimiento(luchador1.Ataque)) : luchador1;
 
             var resultado2 = golpea1
-                ? RecibirGolpe(luchador2, luchador1, entradas.Jugador2, configuracion.Jugador1.Movimiento(luchador1.Ataque))
+                ? RecibirGolpe(luchador2, luchador1, entradas.Jugador2, configuracion.Jugador1.Movimiento(luchador1.Ataque), configuracion.Danio)
                 : golpea2 ? MarcarGolpeConectado(luchador2, configuracion.Jugador2.Movimiento(luchador2.Ataque)) : luchador2;
 
             return (resultado1, resultado2);
@@ -329,7 +383,8 @@ namespace FgcTag.Nucleo.Combate
             in EstadoLuchador defensor,
             in EstadoLuchador atacante,
             BotonesEntrada botonesDefensor,
-            in DatosMovimiento movimiento)
+            in DatosMovimiento movimiento,
+            in ReglasDanio reglasDanio)
         {
             var sentidoRetroceso = defensor.Posicion.X != atacante.Posicion.X
                 ? (defensor.Posicion.X > atacante.Posicion.X ? 1 : -1)
@@ -341,7 +396,9 @@ namespace FgcTag.Nucleo.Combate
             {
                 var velocidadCaida = Fijo.Min(defensor.Velocidad.Y, Fijo.Cero);
 
-                return congelado.ConVelocidad(new VectorFijo(movimiento.RetrocesoAlGolpear * sentidoRetroceso, velocidadCaida));
+                return congelado
+                    .ConVida(VidaTrasGolpe(defensor, reglasDanio.Escalar(movimiento.Danio, 1)))
+                    .ConVelocidad(new VectorFijo(movimiento.RetrocesoAlGolpear * sentidoRetroceso, velocidadCaida));
             }
 
             var bloquea = EstadosAccion.PuedeBloquear(defensor.Accion) &&
@@ -351,12 +408,24 @@ namespace FgcTag.Nucleo.Combate
 
             var golpesEnCombo = bloquea ? 0 : (defensor.Accion == AccionLuchador.Hitstun ? defensor.GolpesEnCombo + 1 : 1);
 
-            return congelado
+            var empujado = congelado
                 .ConGolpesEnCombo(golpesEnCombo)
-                .ConAccionNueva(bloquea ? AccionLuchador.Blockstun : AccionLuchador.Hitstun)
-                .ConAturdimiento(bloquea ? movimiento.Blockstun : movimiento.Hitstun)
                 .ConVelocidad(new VectorFijo(retroceso * sentidoRetroceso, Fijo.Cero));
+
+            if (bloquea)
+            {
+                return empujado.ConAccionNueva(AccionLuchador.Blockstun).ConAturdimiento(movimiento.Blockstun);
+            }
+
+            var vida = VidaTrasGolpe(defensor, reglasDanio.Escalar(movimiento.Danio, golpesEnCombo));
+
+            return vida > 0
+                ? empujado.ConVida(vida).ConAccionNueva(AccionLuchador.Hitstun).ConAturdimiento(movimiento.Hitstun)
+                : empujado.ConVida(0).ConAccionNueva(AccionLuchador.Noqueado).ConAturdimiento(0);
         }
+
+        private static int VidaTrasGolpe(in EstadoLuchador defensor, int danio) =>
+            defensor.Vida > danio ? defensor.Vida - danio : 0;
 
         /// <summary>
         /// Solo giran los luchadores en tierra: quien salta por encima del rival conserva su

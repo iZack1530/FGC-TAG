@@ -21,6 +21,7 @@ namespace FgcTag.Pruebas.Nucleo
             hitstun: 14,
             blockstun: 10,
             hitstop: 8,
+            danio: 100,
             retrocesoAlGolpear: Fijo.DesdeFraccion(1, 8),
             retrocesoAlBloquear: Fijo.DesdeFraccion(1, 16),
             cajaGolpe: new CajaColision(VectorFijo.DesdeEnteros(1, 1), Fijo.Medio, Fijo.DesdeFraccion(1, 4)));
@@ -33,6 +34,7 @@ namespace FgcTag.Pruebas.Nucleo
             hitstun: 17,
             blockstun: 13,
             hitstop: 10,
+            danio: 200,
             retrocesoAlGolpear: Fijo.DesdeFraccion(1, 8),
             retrocesoAlBloquear: Fijo.DesdeFraccion(1, 16),
             cajaGolpe: new CajaColision(VectorFijo.DesdeEnteros(1, 1), Fijo.Uno, Fijo.DesdeFraccion(1, 4)));
@@ -45,6 +47,7 @@ namespace FgcTag.Pruebas.Nucleo
             hitstun: 21,
             blockstun: 16,
             hitstop: 12,
+            danio: 300,
             retrocesoAlGolpear: Fijo.DesdeFraccion(1, 8),
             retrocesoAlBloquear: Fijo.DesdeFraccion(1, 16),
             cajaGolpe: new CajaColision(new VectorFijo(Fijo.DesdeFraccion(3, 2), Fijo.Uno), Fijo.DesdeFraccion(3, 2), Fijo.DesdeFraccion(1, 4)));
@@ -52,7 +55,16 @@ namespace FgcTag.Pruebas.Nucleo
         /// <summary>Un ataque pulsado se recuerda 5 frames, contando el de la pulsación.</summary>
         public const int FramesBufer = 5;
 
+        public const int VidaMaxima = 1000;
+
+        /// <summary>Cada golpe del combo hace 10 puntos porcentuales menos, con un mínimo del 30%.</summary>
+        public static readonly ReglasDanio Danio = new ReglasDanio(reduccionPorGolpe: 10, porcentajeMinimo: 30);
+
+        /// <summary>99 segundos.</summary>
+        public const int FramesPorRonda = 5940;
+
         public static readonly ParametrosLuchador Parametros = new ParametrosLuchador(
+            vidaMaxima: VidaMaxima,
             velocidadAdelante: Fijo.DesdeFraccion(1, 4),
             velocidadAtras: Fijo.DesdeFraccion(1, 8),
             medioAnchoEmpuje: Fijo.Medio,
@@ -75,16 +87,24 @@ namespace FgcTag.Pruebas.Nucleo
             golpeMedio: GolpeMedio,
             golpeFuerte: GolpeFuerte);
 
-        public static readonly ConfiguracionCombate Configuracion = new ConfiguracionCombate(
+        public static readonly ConfiguracionCombate Configuracion = ConfiguracionConReloj(FramesPorRonda);
+
+        public static ConfiguracionCombate ConfiguracionConReloj(int framesPorRonda) => new ConfiguracionCombate(
             Parametros,
             Parametros,
             Fijo.DesdeEntero(-10),
             Fijo.DesdeEntero(10),
             friccionRetroceso: Fijo.DesdeFraccion(1, 64),
-            framesBuferEntradas: FramesBufer);
+            framesBuferEntradas: FramesBufer,
+            danio: Danio,
+            framesPorRonda: framesPorRonda);
 
         public static EstadoPartida Inicial(int x1, int x2) =>
-            EstadoPartida.Crear(VectorFijo.DesdeEnteros(x1, 0), VectorFijo.DesdeEnteros(x2, 0));
+            EstadoPartida.Crear(VectorFijo.DesdeEnteros(x1, 0), VectorFijo.DesdeEnteros(x2, 0), Configuracion);
+
+        /// <summary>Copia del estado con la vida de cada luchador cambiada.</summary>
+        public static EstadoPartida ConVidas(EstadoPartida estado, int vida1, int vida2) =>
+            new EstadoPartida(estado.Frame, estado.Luchador1.ConVida(vida1), estado.Luchador2.ConVida(vida2), estado.FramesRestantes, estado.Resultado);
 
         public static EstadoPartida Simular(EstadoPartida estado, BotonesEntrada jugador1, BotonesEntrada jugador2, int frames)
         {
