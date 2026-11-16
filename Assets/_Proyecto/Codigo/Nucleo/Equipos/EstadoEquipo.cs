@@ -59,6 +59,9 @@ namespace FgcTag.Nucleo.Equipos
 
         public readonly EstadoAsistente Asistente;
 
+        /// <summary>Compañero que está abandonando la pantalla tras un cambio, si lo hay.</summary>
+        public readonly EstadoSaliente Saliente;
+
         public EstadoEquipo(
             int indiceActivo,
             VidaEnReserva primero,
@@ -68,7 +71,8 @@ namespace FgcTag.Nucleo.Equipos
             int framesMantenido1,
             int framesMantenido2,
             int framesEsperaAsistencia,
-            EstadoAsistente asistente)
+            EstadoAsistente asistente,
+            EstadoSaliente saliente)
         {
             if (indiceActivo < 0 || indiceActivo >= Miembros)
             {
@@ -84,6 +88,7 @@ namespace FgcTag.Nucleo.Equipos
             FramesMantenido2 = framesMantenido2;
             FramesEsperaAsistencia = framesEsperaAsistencia;
             Asistente = asistente;
+            Saliente = saliente;
         }
 
         /// <summary>Equipo al empezar una ronda: el primero en pantalla y todos con la vida llena.</summary>
@@ -97,7 +102,8 @@ namespace FgcTag.Nucleo.Equipos
                 0,
                 0,
                 0,
-                EstadoAsistente.Ninguno);
+                EstadoAsistente.Ninguno,
+                EstadoSaliente.Ninguno);
 
         /// <summary>Vida guardada de un miembro; la del activo puede estar desfasada (ver <see cref="VidaDe"/>).</summary>
         public VidaEnReserva Reserva(int indice)
@@ -157,33 +163,37 @@ namespace FgcTag.Nucleo.Equipos
                 FramesMantenido1,
                 FramesMantenido2,
                 FramesEsperaAsistencia,
-                Asistente);
+                Asistente,
+                Saliente);
 
         /// <summary>Cambia la vida guardada de un miembro conservando su vida recuperable; con 0 de vida no queda nada que recuperar.</summary>
         public EstadoEquipo ConVidaEnReserva(int indice, int vida) =>
             ConReserva(indice, new VidaEnReserva(vida, vida > 0 ? Reserva(indice).Recuperable : 0));
 
         public EstadoEquipo ConActivo(int indice) =>
-            new EstadoEquipo(indice, Primero, Segundo, Tercero, FramesEsperaCambio, FramesMantenido1, FramesMantenido2, FramesEsperaAsistencia, Asistente);
+            new EstadoEquipo(indice, Primero, Segundo, Tercero, FramesEsperaCambio, FramesMantenido1, FramesMantenido2, FramesEsperaAsistencia, Asistente, Saliente);
 
         public EstadoEquipo ConEsperaCambio(int frames) =>
-            new EstadoEquipo(IndiceActivo, Primero, Segundo, Tercero, frames, FramesMantenido1, FramesMantenido2, FramesEsperaAsistencia, Asistente);
+            new EstadoEquipo(IndiceActivo, Primero, Segundo, Tercero, frames, FramesMantenido1, FramesMantenido2, FramesEsperaAsistencia, Asistente, Saliente);
 
         public EstadoEquipo ConBotonesMantenidos(int frames1, int frames2) =>
-            new EstadoEquipo(IndiceActivo, Primero, Segundo, Tercero, FramesEsperaCambio, frames1, frames2, FramesEsperaAsistencia, Asistente);
+            new EstadoEquipo(IndiceActivo, Primero, Segundo, Tercero, FramesEsperaCambio, frames1, frames2, FramesEsperaAsistencia, Asistente, Saliente);
 
         public EstadoEquipo ConEsperaAsistencia(int frames) =>
-            new EstadoEquipo(IndiceActivo, Primero, Segundo, Tercero, FramesEsperaCambio, FramesMantenido1, FramesMantenido2, frames, Asistente);
+            new EstadoEquipo(IndiceActivo, Primero, Segundo, Tercero, FramesEsperaCambio, FramesMantenido1, FramesMantenido2, frames, Asistente, Saliente);
 
         public EstadoEquipo ConAsistente(EstadoAsistente asistente) =>
-            new EstadoEquipo(IndiceActivo, Primero, Segundo, Tercero, FramesEsperaCambio, FramesMantenido1, FramesMantenido2, FramesEsperaAsistencia, asistente);
+            new EstadoEquipo(IndiceActivo, Primero, Segundo, Tercero, FramesEsperaCambio, FramesMantenido1, FramesMantenido2, FramesEsperaAsistencia, asistente, Saliente);
+
+        public EstadoEquipo ConSaliente(EstadoSaliente saliente) =>
+            new EstadoEquipo(IndiceActivo, Primero, Segundo, Tercero, FramesEsperaCambio, FramesMantenido1, FramesMantenido2, FramesEsperaAsistencia, Asistente, saliente);
 
         public SumaVerificacion AgregarA(SumaVerificacion suma) =>
-            Asistente.AgregarA(
+            Saliente.AgregarA(Asistente.AgregarA(
                 Tercero.AgregarA(Segundo.AgregarA(Primero.AgregarA(suma.Agregar(IndiceActivo))))
                     .Agregar(FramesEsperaCambio)
                     .Agregar(FramesMantenido1)
                     .Agregar(FramesMantenido2)
-                    .Agregar(FramesEsperaAsistencia));
+                    .Agregar(FramesEsperaAsistencia)));
     }
 }

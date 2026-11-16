@@ -1,6 +1,5 @@
 using FgcTag.Nucleo.Colisiones;
 using FgcTag.Nucleo.Combate;
-using FgcTag.Nucleo.Encuentros;
 using FgcTag.Nucleo.Equipos;
 using FgcTag.Nucleo.Matematica;
 
@@ -260,6 +259,49 @@ namespace FgcTag.Contenido
             regeneracionPorFrame: 2,
             regeneracionEnReservaPorFrame: 6);
 
+        /// <summary>
+        /// Agarre normal: una dirección más el golpe fuerte cerca del rival. Activo en los frames
+        /// 5 y 6, con un alcance de 0.75 m (menos que cualquier golpe); si falla, dura 30 frames.
+        /// Si atrapa, sujeta al rival 18 frames, le hace 1000 de daño y lo lanza; quien agarra
+        /// recupera el control 22 frames después del lanzamiento.
+        /// </summary>
+        public static readonly DatosAgarre AgarreCajaGris = new DatosAgarre(
+            arranque: 4,
+            activos: 2,
+            recuperacion: 24,
+            cajaAgarre: new CajaColision(
+                new VectorFijo(Fijo.DesdeFraccion(50, 100), Fijo.DesdeFraccion(100, 100)),
+                Fijo.DesdeFraccion(25, 100),
+                Fijo.DesdeFraccion(40, 100)),
+            framesSujecion: 18,
+            recuperacionTrasLanzar: 22,
+            danio: 1000,
+            velocidadLanzamiento: new VectorFijo(Fijo.DesdeFraccion(7, 100), Fijo.DesdeFraccion(18, 100)),
+            aturdimientoLanzado: 60);
+
+        /// <summary>
+        /// El agarre sale si el rival está en tierra a 1.3 m o menos; más lejos sale el golpe fuerte.
+        /// Tras salir de un hitstun, un blockstun, un derribo o una recuperación aérea, el luchador
+        /// no puede ser agarrado durante 8 frames.
+        /// </summary>
+        public static readonly ReglasAgarre AgarresCajasGrises = new ReglasAgarre(
+            framesProteccion: 8,
+            distanciaActivacion: Fijo.DesdeFraccion(13, 10));
+
+        /// <summary>
+        /// Barra de súper: 7 barras de 1000 unidades. Del daño base de cada movimiento: 3 % al
+        /// ejecutarlo (lo único que da un ataque al aire), 15 % más si conecta o 6 % más si lo
+        /// bloquean; quien lo recibe gana 12 % y quien lo bloquea, 5 %.
+        /// </summary>
+        public static readonly ReglasBarra BarraCajasGrises = new ReglasBarra(
+            unidadesPorBarra: 1000,
+            barrasMaximas: 7,
+            porcentajeAlEjecutar: 3,
+            porcentajeAlConectar: 15,
+            porcentajeAlSerBloqueado: 6,
+            porcentajeAlRecibir: 12,
+            porcentajeAlBloquear: 5);
+
         /// <summary>99 segundos de reloj.</summary>
         public const int FramesPorRonda = 99 * 60;
 
@@ -284,7 +326,8 @@ namespace FgcTag.Contenido
                 debilAereo: GolpeDebilAereoCajaGris,
                 medioAereo: GolpeMedioAereoCajaGris,
                 fuerteAereo: GolpeFuerteAereoCajaGris,
-                asistencia: GolpeMedioCajaGris));
+                asistencia: GolpeMedioCajaGris,
+                agarre: AgarreCajaGris));
 
         public static readonly ConfiguracionCombate ConfiguracionCajasGrises = new ConfiguracionCombate(
             LuchadorCajaGris,
@@ -296,38 +339,39 @@ namespace FgcTag.Contenido
             danio: DanioCajasGrises,
             juggle: JuggleCajasGrises,
             vidaRecuperable: VidaRecuperableCajasGrises,
-            framesPorRonda: FramesPorRonda,
-            framesEntrada: 20);
+            barra: BarraCajasGrises,
+            agarres: AgarresCajasGrises,
+            framesPorRonda: FramesPorRonda);
 
         /// <summary>Por ahora los tres miembros de cada equipo son el mismo luchador de cajas grises.</summary>
         public static readonly ParametrosEquipo EquipoCajasGrises = new ParametrosEquipo(LuchadorCajaGris, LuchadorCajaGris, LuchadorCajaGris);
 
         /// <summary>
-        /// Combate 3 contra 3: quien entra tarda 20 frames en poder actuar, cada equipo espera
-        /// 2 segundos entre cambios y, tras un K.O., el siguiente luchador entra 1 segundo después
-        /// a 4 m del rival. Mantener un botón de asistencia 10 frames cambia de luchador; soltarlo
-        /// antes llama al asistente, que tarda 12 frames en llegar, y hay que esperar 3 segundos
-        /// para llamar a otro.
+        /// Combate 3 contra 3. Mantener un botón de asistencia 10 frames cambia de luchador: el que
+        /// sale se marcha saltando hacia atrás y el que entra llega con un salto de 24 frames desde
+        /// 2.5 m detrás; cada equipo espera 2 segundos entre cambios. Soltar el botón antes llama
+        /// al asistente, que tarda 12 frames en llegar, con 3 segundos de espera para llamar a otro.
+        /// Tras un K.O., el luchador derrotado se queda en el suelo 3.5 segundos y entonces entra
+        /// saltando el siguiente, a 4 m del rival.
         /// </summary>
         public static readonly ConfiguracionEquipos EquiposCajasGrises = new ConfiguracionEquipos(
             EquipoCajasGrises,
             EquipoCajasGrises,
             ConfiguracionCajasGrises,
             framesEsperaCambio: 120,
-            framesPausaNocaut: 60,
+            framesPausaNocaut: 210,
             distanciaEntrada: Fijo.DesdeEntero(4),
             framesMantenerParaCambiar: 10,
             framesLlegadaAsistencia: 12,
-            framesEsperaAsistencia: 180);
+            framesEsperaAsistencia: 180,
+            framesEntrada: 24,
+            desplazamientoEntrada: new VectorFijo(Fijo.DesdeFraccion(25, 10), Fijo.DesdeFraccion(22, 10)),
+            framesSalida: 24,
+            velocidadSalida: new VectorFijo(Fijo.DesdeFraccion(12, 100), Fijo.DesdeFraccion(12, 100)));
 
-        /// <summary>Encuentro al mejor de 3 rondas (2 victorias), con 3 segundos de pausa entre rondas.</summary>
-        public static readonly ConfiguracionEncuentro EncuentroCajasGrises = new ConfiguracionEncuentro(
-            EquiposCajasGrises,
-            victoriasNecesarias: 2,
-            framesEntreRondas: 180,
-            posicionInicial1: VectorFijo.DesdeEnteros(-2, 0),
-            posicionInicial2: VectorFijo.DesdeEnteros(2, 0));
-
-        public static readonly EstadoEncuentro EncuentroInicial = EstadoEncuentro.Crear(EncuentroCajasGrises);
+        public static readonly EstadoCombateEquipos CombateInicial = EstadoCombateEquipos.Crear(
+            VectorFijo.DesdeEnteros(-2, 0),
+            VectorFijo.DesdeEnteros(2, 0),
+            EquiposCajasGrises);
     }
 }

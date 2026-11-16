@@ -1,3 +1,4 @@
+using System;
 using FgcTag.Nucleo.Colisiones;
 using FgcTag.Nucleo.Combate;
 using FgcTag.Nucleo.Matematica;
@@ -22,23 +23,23 @@ namespace FgcTag.Nucleo.Equipos
             var enJuego = !estado.Terminado && !estado.Duelo.RondaTerminada;
 
             var (luchador1, equipo1) = enJuego
-                ? AtenderBotonesDeEquipo(estado.Duelo.Luchador1, estado.Equipo1, entradas.Jugador1, estado.Duelo.Luchador2.Posicion.X, configuracion)
+                ? AtenderBotonesDeEquipo(estado.Duelo.Luchador1, estado.Equipo1, entradas.Jugador1, estado.Duelo.Luchador2.Posicion.X, configuracion.Equipo1, configuracion)
                 : (estado.Duelo.Luchador1, SinBotonesNiAsistente(estado.Equipo1, entradas.Jugador1));
 
             var (luchador2, equipo2) = enJuego
-                ? AtenderBotonesDeEquipo(estado.Duelo.Luchador2, estado.Equipo2, entradas.Jugador2, estado.Duelo.Luchador1.Posicion.X, configuracion)
+                ? AtenderBotonesDeEquipo(estado.Duelo.Luchador2, estado.Equipo2, entradas.Jugador2, estado.Duelo.Luchador1.Posicion.X, configuracion.Equipo2, configuracion)
                 : (estado.Duelo.Luchador2, SinBotonesNiAsistente(estado.Equipo2, entradas.Jugador2));
 
             var reglasDuelo = configuracion.DueloEntre(equipo1.IndiceActivo, equipo2.IndiceActivo);
 
-            var (equipo1ConAsistente, golpeado2) = AvanzarAsistente(equipo1, configuracion.Equipo1, luchador2, reglasDuelo.Jugador2, entradas.Jugador2, reglasDuelo, configuracion);
-            var (equipo2ConAsistente, golpeado1) = AvanzarAsistente(equipo2, configuracion.Equipo2, luchador1, reglasDuelo.Jugador1, entradas.Jugador1, reglasDuelo, configuracion);
+            var (equipo1ConAsistente, golpeado2, barra1) = AvanzarAsistente(equipo1, configuracion.Equipo1, luchador1.Barra, luchador2, reglasDuelo.Jugador2, entradas.Jugador2, reglasDuelo, configuracion);
+            var (equipo2ConAsistente, golpeado1, barra2) = AvanzarAsistente(equipo2, configuracion.Equipo2, luchador2.Barra, luchador1, reglasDuelo.Jugador1, entradas.Jugador1, reglasDuelo, configuracion);
 
-            var dueloPreparado = new EstadoPartida(estado.Duelo.Frame, golpeado1, golpeado2, estado.Duelo.FramesRestantes, estado.Duelo.Resultado);
+            var dueloPreparado = new EstadoPartida(estado.Duelo.Frame, golpeado1.ConBarra(Math.Max(golpeado1.Barra, barra1)), golpeado2.ConBarra(Math.Max(golpeado2.Barra, barra2)), estado.Duelo.FramesRestantes, estado.Duelo.Resultado);
             var duelo = SimuladorCombate.Avanzar(dueloPreparado, entradas, reglasDuelo);
 
-            var equipo1Avanzado = AvanzarReservas(equipo1ConAsistente, enJuego, reglasDuelo.VidaRecuperable);
-            var equipo2Avanzado = AvanzarReservas(equipo2ConAsistente, enJuego, reglasDuelo.VidaRecuperable);
+            var equipo1Avanzado = AvanzarReservas(equipo1ConAsistente, enJuego, reglasDuelo.VidaRecuperable, configuracion.FramesSalida);
+            var equipo2Avanzado = AvanzarReservas(equipo2ConAsistente, enJuego, reglasDuelo.VidaRecuperable, configuracion.FramesSalida);
 
             if (estado.Terminado)
             {
@@ -80,6 +81,7 @@ namespace FgcTag.Nucleo.Equipos
             in EstadoEquipo equipo,
             BotonesEntrada botones,
             Fijo xRival,
+            in ParametrosEquipo parametrosEquipo,
             in ConfiguracionEquipos configuracion)
         {
             var (activoTrasBoton1, equipoTrasBoton1, mantenido1) = AtenderBoton(
@@ -90,6 +92,7 @@ namespace FgcTag.Nucleo.Equipos
                 equipo.FramesMantenido1,
                 equipo.IndiceDelCompanero(1),
                 xRival,
+                parametrosEquipo,
                 configuracion);
 
             var (activoTrasBoton2, equipoTrasBoton2, mantenido2) = AtenderBoton(
@@ -100,6 +103,7 @@ namespace FgcTag.Nucleo.Equipos
                 equipo.FramesMantenido2,
                 equipo.IndiceDelCompanero(2),
                 xRival,
+                parametrosEquipo,
                 configuracion);
 
             return (activoTrasBoton2, equipoTrasBoton2.ConBotonesMantenidos(mantenido1, mantenido2));
@@ -118,6 +122,7 @@ namespace FgcTag.Nucleo.Equipos
             int framesMantenidoAntes,
             int companero,
             Fijo xRival,
+            in ParametrosEquipo parametrosEquipo,
             in ConfiguracionEquipos configuracion)
         {
             if (!mantenido)
@@ -141,7 +146,7 @@ namespace FgcTag.Nucleo.Equipos
                 return (activo, equipo, framesMantenido);
             }
 
-            var (entrante, equipoCambiado) = Cambiar(activo, equipo, companero, botones, configuracion.FramesEsperaCambio);
+            var (entrante, equipoCambiado) = Cambiar(activo, equipo, companero, botones, parametrosEquipo, configuracion);
 
             return (entrante, equipoCambiado, EstadoEquipo.PulsacionConsumida);
         }
@@ -179,37 +184,73 @@ namespace FgcTag.Nucleo.Equipos
             EstadosAccion.EstaAtacandoEnTierra(activo.Accion) && activo.GolpeConectado && !activo.GolpeBloqueado;
 
         /// <summary>
-        /// El que entra ocupa el sitio del que sale. En un cambio normal tarda unos frames en poder
-        /// actuar; en un cambio en mitad de combo entra con control para poder seguirlo.
+        /// El que sale se marcha saltando hacia atrás y el que entra llega saltando desde ese mismo
+        /// lado hasta su sitio. En un cambio en mitad de combo no hay salto de entrada: aparece en
+        /// el sitio con control para poder seguir el combo. La barra pasa al que entra.
         /// </summary>
         private static (EstadoLuchador, EstadoEquipo) Cambiar(
             in EstadoLuchador activo,
             in EstadoEquipo equipo,
             int companero,
             BotonesEntrada botones,
-            int framesEsperaCambio)
+            in ParametrosEquipo parametrosEquipo,
+            in ConfiguracionEquipos configuracion)
         {
-            var entrante = Entrar(activo.Posicion.ConY(Fijo.Cero), activo.MiraDerecha, equipo.Reserva(companero), botones, EsCambioEnCombo(activo));
+            var reserva = equipo.Reserva(companero);
+            var destino = activo.Posicion.ConY(Fijo.Cero);
+
+            var entrante = EsCambioEnCombo(activo)
+                ? EnPantalla(destino, activo.MiraDerecha, reserva, activo.Barra, botones)
+                : EntrarSaltando(destino.X, activo.MiraDerecha, reserva, activo.Barra, botones, parametrosEquipo.Obtener(companero), configuracion);
 
             var equipoCambiado = equipo
                 .ConReserva(equipo.IndiceActivo, new VidaEnReserva(activo.Vida, activo.VidaRecuperable))
+                .ConSaliente(EstadoSaliente.Desde(equipo.IndiceActivo, destino, activo.MiraDerecha))
                 .ConActivo(companero)
-                .ConEsperaCambio(framesEsperaCambio);
+                .ConEsperaCambio(configuracion.FramesEsperaCambio);
 
             return (entrante, equipoCambiado);
         }
 
         /// <summary>
-        /// Luchador que llega a la pantalla. Recuerda los botones ya pulsados para que mantenerlos
-        /// durante el cambio no lance un ataque.
+        /// Luchador que llega a la pantalla con la vida de su reserva y la barra del equipo.
+        /// Recuerda los botones ya pulsados para que mantenerlos durante el cambio no lance un ataque.
         /// </summary>
-        private static EstadoLuchador Entrar(VectorFijo posicion, bool miraDerecha, VidaEnReserva reserva, BotonesEntrada botones, bool conControl)
-        {
-            var entrante = EstadoLuchador.EnReposo(posicion, miraDerecha, reserva.Vida)
+        private static EstadoLuchador EnPantalla(VectorFijo posicion, bool miraDerecha, VidaEnReserva reserva, int barra, BotonesEntrada botones) =>
+            EstadoLuchador.EnReposo(posicion, miraDerecha, reserva.Vida)
                 .ConVidaRecuperable(reserva.Recuperable)
+                .ConBarra(barra)
                 .ConBotonesAnteriores(botones);
 
-            return conControl ? entrante : entrante.ConAccionNueva(AccionLuchador.Entrando);
+        /// <summary>
+        /// Entrada saltando: empieza detrás de su destino y en alto, y cae en él tras los frames de
+        /// entrada. Si la pared no deja sitio detrás, cae más vertical. Durante el salto no tiene
+        /// control ni puede bloquear, así que un cambio en neutral se puede castigar.
+        /// </summary>
+        private static EstadoLuchador EntrarSaltando(
+            Fijo xDestino,
+            bool miraDerecha,
+            VidaEnReserva reserva,
+            int barra,
+            BotonesEntrada botones,
+            in ParametrosLuchador parametros,
+            in ConfiguracionEquipos configuracion)
+        {
+            var frames = configuracion.FramesEntrada;
+            var haciaAtras = miraDerecha ? -1 : 1;
+            var xInicio = Fijo.Limitar(
+                xDestino + configuracion.DesplazamientoEntrada.X * haciaAtras,
+                configuracion.Reglas.LimiteIzquierdo + parametros.MedioAnchoEmpujeAire,
+                configuracion.Reglas.LimiteDerecho - parametros.MedioAnchoEmpujeAire);
+
+            var caidaPorGravedad = parametros.Salto.Gravedad * (frames * (frames - 1) / 2);
+            var velocidad = new VectorFijo(
+                (xDestino - xInicio) / frames,
+                (caidaPorGravedad - configuracion.DesplazamientoEntrada.Y) / frames);
+
+            return EnPantalla(new VectorFijo(xInicio, configuracion.DesplazamientoEntrada.Y), miraDerecha, reserva, barra, botones)
+                .ConVelocidad(velocidad)
+                .ConAccionNueva(AccionLuchador.Entrando);
         }
 
         /// <summary>
@@ -217,9 +258,11 @@ namespace FgcTag.Nucleo.Equipos
         /// se aplica al rival en pantalla igual que uno del luchador activo: se puede bloquear,
         /// cuenta para el combo y congela al asistente durante el hitstop.
         /// </summary>
-        private static (EstadoEquipo, EstadoLuchador) AvanzarAsistente(
+        /// <returns>El equipo, el rival tras el posible golpe y la barra del equipo, que crece si el asistente golpea.</returns>
+        private static (EstadoEquipo, EstadoLuchador, int) AvanzarAsistente(
             in EstadoEquipo equipo,
             in ParametrosEquipo parametrosEquipo,
+            int barra,
             in EstadoLuchador rival,
             in ParametrosLuchador parametrosRival,
             BotonesEntrada botonesRival,
@@ -230,12 +273,12 @@ namespace FgcTag.Nucleo.Equipos
 
             if (!asistente.EnPantalla)
             {
-                return (equipo, rival);
+                return (equipo, rival, barra);
             }
 
             if (asistente.FramesHitstop > 0)
             {
-                return (equipo.ConAsistente(asistente.ConHitstop(asistente.FramesHitstop - 1)), rival);
+                return (equipo.ConAsistente(asistente.ConHitstop(asistente.FramesHitstop - 1)), rival, barra);
             }
 
             var movimiento = parametrosEquipo.Obtener(asistente.Miembro).Movimientos.Asistencia;
@@ -243,7 +286,7 @@ namespace FgcTag.Nucleo.Equipos
 
             if (frameDelAtaque >= movimiento.DuracionTotal)
             {
-                return (equipo.ConAsistente(EstadoAsistente.Ninguno), rival);
+                return (equipo.ConAsistente(EstadoAsistente.Ninguno), rival, barra);
             }
 
             var golpea = frameDelAtaque >= 0 &&
@@ -254,12 +297,14 @@ namespace FgcTag.Nucleo.Equipos
 
             if (!golpea)
             {
-                return (equipo.ConAsistente(asistente.UnFrameDespues()), rival);
+                return (equipo.ConAsistente(asistente.UnFrameDespues()), rival, barra);
             }
 
             var rivalGolpeado = ResolucionGolpes.RecibirGolpeDesde(rival, asistente.Posicion.X, asistente.MiraDerecha, botonesRival, movimiento, reglasDuelo);
 
-            return (equipo.ConAsistente(asistente.TrasConectar(movimiento.Hitstop)), rivalGolpeado);
+            var barraGanada = ResolucionGolpes.BarraDelAtacante(barra, movimiento, EstadosAccion.EstaBloqueando(rivalGolpeado.Accion), reglasDuelo.Barra);
+
+            return (equipo.ConAsistente(asistente.TrasConectar(movimiento.Hitstop)), rivalGolpeado, barraGanada);
         }
 
         /// <summary>Caja de golpe del asistente en el escenario, para comprobar el golpe y para dibujarla.</summary>
@@ -270,9 +315,10 @@ namespace FgcTag.Nucleo.Equipos
         /// Descuenta las esperas y, con el duelo en marcha, regenera la vida recuperable de los
         /// compañeros en reserva: más deprisa que en pantalla y sin espera.
         /// </summary>
-        private static EstadoEquipo AvanzarReservas(in EstadoEquipo equipo, bool enJuego, in ReglasVidaRecuperable reglas)
+        private static EstadoEquipo AvanzarReservas(in EstadoEquipo equipo, bool enJuego, in ReglasVidaRecuperable reglas, int framesSalida)
         {
             var conEsperas = equipo
+                .ConSaliente(equipo.Saliente.UnFrameDespues(framesSalida))
                 .ConEsperaCambio(equipo.FramesEsperaCambio > 0 ? equipo.FramesEsperaCambio - 1 : 0)
                 .ConEsperaAsistencia(equipo.FramesEsperaAsistencia > 0 ? equipo.FramesEsperaAsistencia - 1 : 0);
 
@@ -341,8 +387,9 @@ namespace FgcTag.Nucleo.Equipos
         }
 
         /// <summary>
-        /// Entra el siguiente luchador de cada equipo noqueado y el duelo se reanuda. Quien releva
-        /// aparece a la distancia de entrada del rival, hacia el lado de su equipo; si relevan los
+        /// Entra el siguiente luchador de cada equipo noqueado, el noqueado desaparece y el duelo se
+        /// reanuda. Quien releva llega saltando desde el lado de su equipo y cae a la distancia de
+        /// entrada del rival; si relevan los
         /// dos, se colocan a esa distancia entre sí alrededor del centro del escenario.
         /// </summary>
         private static EstadoCombateEquipos RelevarNoqueados(
@@ -364,11 +411,11 @@ namespace FgcTag.Nucleo.Equipos
             var equipo2Relevado = releva2 ? Relevar(equipo2) : equipo2;
 
             var luchador1 = releva1
-                ? Entrar(EnElEscenario(x1, configuracion), true, equipo1Relevado.Reserva(equipo1Relevado.IndiceActivo), entradas.Jugador1, false)
+                ? EntrarSaltando(EnElEscenario(x1, configuracion).X, true, equipo1Relevado.Reserva(equipo1Relevado.IndiceActivo), duelo.Luchador1.Barra, entradas.Jugador1, configuracion.Equipo1.Obtener(equipo1Relevado.IndiceActivo), configuracion)
                 : duelo.Luchador1;
 
             var luchador2 = releva2
-                ? Entrar(EnElEscenario(x2, configuracion), false, equipo2Relevado.Reserva(equipo2Relevado.IndiceActivo), entradas.Jugador2, false)
+                ? EntrarSaltando(EnElEscenario(x2, configuracion).X, false, equipo2Relevado.Reserva(equipo2Relevado.IndiceActivo), duelo.Luchador2.Barra, entradas.Jugador2, configuracion.Equipo2.Obtener(equipo2Relevado.IndiceActivo), configuracion)
                 : duelo.Luchador2;
 
             var dueloReanudado = new EstadoPartida(duelo.Frame, luchador1, luchador2, duelo.FramesRestantes, ResultadoRonda.EnCurso);

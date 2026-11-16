@@ -77,6 +77,30 @@ namespace FgcTag.Nucleo.Combate
             Movimientos.Obtener(luchador.Ataque, EstadosAccion.PosturaDeAtaque(luchador.Accion));
 
         /// <summary>Medio ancho más grande entre tierra y aire; el escenario debe caber dos de cada lado.</summary>
+        /// <summary>
+        /// Agarre que está intentando o ejecutando el luchador. Hoy solo existe el agarre normal;
+        /// los agarres de comando se elegirán aquí.
+        /// </summary>
+        public DatosAgarre AgarreEnCurso(in EstadoLuchador luchador) => Movimientos.Agarre;
+
+        /// <summary>Caja de agarre en el escenario durante los frames activos de un intento de agarre.</summary>
+        public CajaColision? CajaAgarreActiva(in EstadoLuchador luchador)
+        {
+            if (luchador.Accion != AccionLuchador.IntentandoAgarre || luchador.EnHitstop)
+            {
+                return null;
+            }
+
+            var agarre = AgarreEnCurso(luchador);
+
+            if (!agarre.EstaActivo(luchador.FramesEnAccion))
+            {
+                return null;
+            }
+
+            return agarre.CajaAgarre.Orientada(luchador.MiraDerecha).Desplazada(luchador.Posicion);
+        }
+
         public Fijo MedioAnchoMaximo => Fijo.Max(MedioAnchoEmpuje, MedioAnchoEmpujeAire);
 
         /// <summary>Caja de empuje apoyada en los pies del luchador, según esté en el suelo o en el aire.</summary>

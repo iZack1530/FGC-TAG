@@ -63,11 +63,12 @@ El reparto de trabajo es: **VS Code** para leer y editar código y para Git; **U
 | Golpes agachados (bajos) | S + U / I / O | Flecha abajo + Num 4 / 5 / 6 | Abajo + botón de golpe |
 | Lanzador (botón Especial, de pie o agachado) | J | Num 1 | Equis-A |
 | Ataques aéreos | U / I / O durante un salto | Num 4 / 5 / 6 | Igual que en tierra |
+| Agarre (cerca del rival) | A o D + O | ← o → + Num 6 | Dirección + Círculo-B |
 | Asistencia del siguiente compañero / del otro (pulsar y soltar) | K / L | Num 2 / 3 | L1 / R1 |
 | Cambiar a ese compañero (mantener) | K / L | Num 2 / 3 | L1 / R1 |
 | Pausar / reanudar la simulación | F1 | | |
 | Avanzar un frame (en pausa) | F2 | | |
-| Empezar un encuentro nuevo | F3 | | |
+| Empezar un combate nuevo | F3 | | |
 
 El primer mando conectado es del jugador 1 y el segundo del jugador 2. La esquina superior izquierda muestra el frame, la suma de verificación, el estado de cada luchador y la frame data del último ataque del jugador 1.
 
@@ -78,10 +79,11 @@ La última línea del HUD mide la ventaja en frames del último golpe: cuántos 
 El combate es por equipos de 3: cada jugador tiene un luchador en pantalla y dos en reserva. Por ahora los tres miembros son el mismo luchador de cajas grises, con un tono distinto cada uno.
 
 - **Asistencia:** pulsar y soltar K o L (Num 2 o 3) llama a ese compañero, que llega, hace un único ataque (por ahora el golpe medio; cada luchador tiene su propio ataque de asistencia en `MovimientosLuchador.Asistencia`) y se marcha. Su golpe se puede bloquear y cuenta para el combo. Hay que esperar 3 segundos para llamar a otro.
-- **Cambio:** mantener K o L unos 10 frames cambia a ese compañero. Con control en tierra, quien entra tarda 20 frames en poder actuar y no puede bloquear. Interrumpiendo un golpe en tierra que conectó sin ser bloqueado, quien entra tiene control al instante y puede seguir el combo. Cada equipo espera 2 segundos entre cambios.
+- **Cambio:** mantener K o L unos 10 frames cambia a ese compañero. Con control en tierra, el que sale se marcha saltando hacia atrás y el que entra llega con un salto desde ese mismo lado: mientras salta no tiene control ni puede bloquear, así que el cambio en neutral se puede castigar. Interrumpiendo un golpe en tierra que conectó sin ser bloqueado, quien entra aparece en el sitio con control al instante y puede seguir el combo. Cada equipo espera 2 segundos entre cambios.
 - **Vida azul:** la mitad del daño de cada golpe no bloqueado queda como vida recuperable y cada golpe nuevo destruye un cuarto de la acumulada. En pantalla se regenera despacio tras 3 segundos sin recibir golpes; en reserva, tres veces más rápido y sin espera.
-- **Relevo:** tras un K.O., el siguiente compañero con vida entra 1 segundo después. Pierde la ronda el equipo que se queda sin luchadores; con el tiempo agotado, gana el que conserva más vida total.
-- **Rondas:** el encuentro es al mejor de 3 (gana quien llegue a 2 rondas). Cada ronda empieza con los dos equipos completos; una ronda empatada cuenta para los dos.
+- **Relevo:** tras un K.O., el luchador derrotado se queda en el suelo 3.5 segundos; entonces desaparece y el siguiente compañero con vida entra saltando desde el lado de su equipo. Pierde el equipo que se queda sin luchadores; con el tiempo agotado, gana el que conserva más vida total. El combate es a una sola ronda.
+- **Agarre:** una dirección (adelante o atrás) más el golpe fuerte, con el rival en tierra a 1.3 m o menos, es un agarre: supera la guardia, está activo en los frames 5 y 6 y tiene muy poco alcance (caja verde). Si atrapa, sujeta al rival, le hace 1000 de daño y lo lanza; con la dirección contraria al rival, intercambia las posiciones y lo lanza hacia el otro lado. Si falla, deja 30 frames al descubierto. No atrapa a un rival en el aire, despegando, aturdido o derribado, ni durante los 8 frames siguientes a un hitstun, un blockstun o un derribo. Un golpe gana a un agarre en el mismo frame y dos agarres simultáneos se anulan. Más lejos, o sin dirección, sale el golpe fuerte de siempre. El código (`DatosAgarre`, `ResolucionAgarres`) sirve también para futuros agarres de comando.
+- **Barra de súper:** de 0 a 7 barras por equipo; aún no se gasta. Cada ataque da barra según su daño base: 3 % al ejecutarlo (lo único que da un ataque al aire), 15 % más si conecta o 6 % más si lo bloquean; quien lo recibe gana 12 % y quien lo bloquea, 5 %. La barra pasa al compañero que entra.
 
 La guardia tiene altura. Los golpes agachados son bajos y solo se bloquean agachado; los ataques aéreos son altos y solo se bloquean de pie; los golpes de pie y el lanzador se bloquean de las dos formas. Con la guardia equivocada, el golpe entra. En el aire se bloquea cualquier golpe durante un salto libre, pero no mientras se ataca.
 

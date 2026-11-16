@@ -27,11 +27,11 @@ namespace FgcTag.Nucleo.Combate
                 : luchador2;
 
             var resultado1 = golpea1 && !golpea2
-                ? MarcarContacto(luchador1, configuracion.Jugador1.MovimientoEnCurso(luchador1), recibido2)
+                ? MarcarContacto(luchador1, configuracion.Jugador1.MovimientoEnCurso(luchador1), recibido2, configuracion.Barra)
                 : recibido1;
 
             var resultado2 = golpea2 && !golpea1
-                ? MarcarContacto(luchador2, configuracion.Jugador2.MovimientoEnCurso(luchador2), recibido1)
+                ? MarcarContacto(luchador2, configuracion.Jugador2.MovimientoEnCurso(luchador2), recibido1, configuracion.Barra)
                 : recibido2;
 
             return (resultado1, resultado2);
@@ -58,15 +58,20 @@ namespace FgcTag.Nucleo.Combate
         public static bool PuedeSerGolpeado(in EstadoLuchador defensor, in ReglasJuggle juggle) =>
             !EstadosAccion.EsInvulnerable(defensor.Accion) && !juggle.EsInvencibleAlRecuperarse(defensor);
 
-        /// <summary>El atacante anota que su golpe conectó, y si el rival lo bloqueó, y entra en hitstop.</summary>
-        private static EstadoLuchador MarcarContacto(in EstadoLuchador atacante, in DatosMovimiento movimiento, in EstadoLuchador defensorTrasElGolpe)
+        /// <summary>El atacante anota que su golpe conectó, y si el rival lo bloqueó, gana barra y entra en hitstop.</summary>
+        private static EstadoLuchador MarcarContacto(in EstadoLuchador atacante, in DatosMovimiento movimiento, in EstadoLuchador defensorTrasElGolpe, in ReglasBarra barra)
         {
-            var marcado = EstadosAccion.EstaBloqueando(defensorTrasElGolpe.Accion)
-                ? atacante.ConGolpeBloqueado()
-                : atacante.ConGolpeConectado(true);
+            var bloqueado = EstadosAccion.EstaBloqueando(defensorTrasElGolpe.Accion);
+            var marcado = bloqueado ? atacante.ConGolpeBloqueado() : atacante.ConGolpeConectado(true);
 
-            return marcado.ConHitstop(movimiento.Hitstop);
+            return marcado
+                .ConBarra(BarraDelAtacante(atacante.Barra, movimiento, bloqueado, barra))
+                .ConHitstop(movimiento.Hitstop);
         }
+
+        /// <summary>Barra del atacante tras un golpe que llega al rival: gana más si conecta que si se lo bloquean.</summary>
+        public static int BarraDelAtacante(int barraActual, in DatosMovimiento movimiento, bool bloqueado, in ReglasBarra barra) =>
+            bloqueado ? barra.AlSerBloqueado(barraActual, movimiento.Danio) : barra.AlConectar(barraActual, movimiento.Danio);
 
         /// <summary>
         /// Se bloquea manteniendo la dirección que aleja del atacante. En tierra la guardia debe
@@ -100,6 +105,7 @@ namespace FgcTag.Nucleo.Combate
 
             var enAire = EstadosAccion.EstaEnElAire(defensor.Accion);
             var congelado = defensor.ConHitstop(movimiento.Hitstop).ConGolpeConectado(false).ConAtaque(TipoAtaque.Ninguno);
+            var barraAlBloquear = configuracion.Barra.AlBloquear(defensor.Barra, movimiento.Danio);
 
             var mantieneAtras = InterpretacionEntradas.DireccionHorizontal(botonesDefensor) == sentidoRetroceso;
             var guardiaAgachada = InterpretacionEntradas.DireccionVertical(botonesDefensor) < 0;
@@ -108,6 +114,7 @@ namespace FgcTag.Nucleo.Combate
             {
                 return congelado
                     .ConVida(VidaTrasBloqueo(defensor, configuracion.Danio.AlBloquear(movimiento.Danio)))
+                    .ConBarra(barraAlBloquear)
                     .ConGolpesEnCombo(0)
                     .ConVelocidad(new VectorFijo(movimiento.RetrocesoAlBloquear * sentidoRetroceso, defensor.Velocidad.Y))
                     .ConAccionNueva(AccionLuchador.BloqueandoEnAire)
@@ -123,6 +130,7 @@ namespace FgcTag.Nucleo.Combate
             {
                 return congelado
                     .ConVida(VidaTrasBloqueo(defensor, configuracion.Danio.AlBloquear(movimiento.Danio)))
+                    .ConBarra(barraAlBloquear)
                     .ConGolpesEnCombo(0)
                     .ConVelocidad(new VectorFijo(movimiento.RetrocesoAlBloquear * sentidoRetroceso, Fijo.Cero))
                     .ConAccionNueva(guardiaAgachada ? AccionLuchador.BlockstunAgachado : AccionLuchador.Blockstun)
@@ -139,6 +147,7 @@ namespace FgcTag.Nucleo.Combate
                 .ConVida(vida)
                 .ConVidaRecuperable(recuperable)
                 .ConFramesSinRecibirGolpe(0)
+                .ConBarra(configuracion.Barra.AlRecibir(defensor.Barra, movimiento.Danio))
                 .ConAturdimiento(0);
 
             if (enAire || movimiento.Lanza)

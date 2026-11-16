@@ -55,8 +55,17 @@ namespace FgcTag.Nucleo.Combate
         /// <summary>Aturdido en el suelo por un golpe bloqueado con la guardia baja.</summary>
         BlockstunAgachado = 17,
 
-        /// <summary>Recién llegado a la pantalla por un cambio o un relevo: en el suelo, sin control y sin poder bloquear.</summary>
+        /// <summary>Llega a la pantalla saltando desde detrás: está en el aire, sin control y sin poder bloquear.</summary>
         Entrando = 18,
+
+        /// <summary>Intento de agarre: arranque, frames activos y recuperación si falla.</summary>
+        IntentandoAgarre = 19,
+
+        /// <summary>Sujeta al rival y lo lanza; no recibe golpes mientras dura.</summary>
+        Agarrando = 20,
+
+        /// <summary>Sujeto por el rival hasta que lo lanza; no recibe golpes mientras dura.</summary>
+        Agarrado = 21,
     }
 
     public static class EstadosAccion
@@ -70,7 +79,7 @@ namespace FgcTag.Nucleo.Combate
 
         /// <summary>Acciones en las que el luchador se gira para mirar al rival. En el aire, atacando o aturdido conserva su orientación.</summary>
         public static bool PuedeGirar(AccionLuchador accion) =>
-            TieneControlEnTierra(accion) || accion == AccionLuchador.Aterrizaje || accion == AccionLuchador.Entrando;
+            TieneControlEnTierra(accion) || accion == AccionLuchador.Aterrizaje;
 
         /// <summary>Se puede bloquear con control en tierra, o encadenando bloqueos mientras dura el blockstun.</summary>
         public static bool PuedeBloquear(AccionLuchador accion) =>
@@ -83,7 +92,8 @@ namespace FgcTag.Nucleo.Combate
             accion == AccionLuchador.AtacandoEnAire ||
             accion == AccionLuchador.GolpeadoEnAire ||
             accion == AccionLuchador.BloqueandoEnAire ||
-            accion == AccionLuchador.RecuperandoEnAire;
+            accion == AccionLuchador.RecuperandoEnAire ||
+            accion == AccionLuchador.Entrando;
 
         /// <summary>
         /// En el aire se bloquea durante un salto libre, encadenando bloqueos o al recuperarse de
@@ -125,7 +135,19 @@ namespace FgcTag.Nucleo.Combate
 
         /// <summary>Acciones en las que ningún golpe puede conectar.</summary>
         public static bool EsInvulnerable(AccionLuchador accion) =>
-            accion == AccionLuchador.Derribado || accion == AccionLuchador.Noqueado;
+            accion == AccionLuchador.Derribado ||
+            accion == AccionLuchador.Noqueado ||
+            accion == AccionLuchador.Agarrando ||
+            accion == AccionLuchador.Agarrado;
+
+        /// <summary>Estados que renuevan la protección contra agarres: mientras duran, y unos frames después, no se puede agarrar al luchador.</summary>
+        public static bool ProtegeDeAgarres(AccionLuchador accion) =>
+            EstaAturdido(accion) ||
+            accion == AccionLuchador.GolpeadoEnAire ||
+            accion == AccionLuchador.Derribado ||
+            accion == AccionLuchador.RecuperandoEnAire ||
+            accion == AccionLuchador.BloqueandoEnAire ||
+            accion == AccionLuchador.Agarrado;
 
         /// <summary>Recibiendo un combo: el siguiente golpe cuenta como parte de él.</summary>
         public static bool EstaEnCombo(AccionLuchador accion) =>

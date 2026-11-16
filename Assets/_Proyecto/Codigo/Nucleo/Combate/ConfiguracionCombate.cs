@@ -29,8 +29,9 @@ namespace FgcTag.Nucleo.Combate
         /// <summary>Duración del reloj de la ronda, en frames de 60 Hz.</summary>
         public readonly int FramesPorRonda;
 
-        /// <summary>Frames que tarda en poder actuar un luchador que acaba de entrar a la pantalla.</summary>
-        public readonly int FramesEntrada;
+        public readonly ReglasBarra Barra;
+
+        public readonly ReglasAgarre Agarres;
 
         public ConfiguracionCombate(
             ParametrosLuchador jugador1,
@@ -42,14 +43,10 @@ namespace FgcTag.Nucleo.Combate
             ReglasDanio danio,
             ReglasJuggle juggle,
             ReglasVidaRecuperable vidaRecuperable,
-            int framesPorRonda,
-            int framesEntrada)
+            ReglasBarra barra,
+            ReglasAgarre agarres,
+            int framesPorRonda)
         {
-            if (framesEntrada < 1)
-            {
-                throw new ArgumentOutOfRangeException(nameof(framesEntrada), "La entrada dura al menos 1 frame.");
-            }
-
             var anchoMinimo = (jugador1.MedioAnchoMaximo + jugador2.MedioAnchoMaximo) * 2;
 
             if (limiteDerecho - limiteIzquierdo < anchoMinimo)
@@ -82,7 +79,8 @@ namespace FgcTag.Nucleo.Combate
             Juggle = juggle;
             VidaRecuperable = vidaRecuperable;
             FramesPorRonda = framesPorRonda;
-            FramesEntrada = framesEntrada;
+            Barra = barra;
+            Agarres = agarres;
         }
 
         /// <summary>Las mismas reglas con otros dos luchadores en pantalla.</summary>
@@ -97,7 +95,8 @@ namespace FgcTag.Nucleo.Combate
                 Danio,
                 Juggle,
                 VidaRecuperable,
-                FramesPorRonda,
-                FramesEntrada);
+                Barra,
+                Agarres,
+                FramesPorRonda);
     }
 }

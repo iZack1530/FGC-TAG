@@ -254,7 +254,7 @@ namespace FgcTag.Pruebas.Nucleo
         {
             var inicial = ConRecuperableActivo1(ConVidasActivas(InicialPorEquipos(0, 1), 700, VidaMaxima), 600);
             var estado = CambiarJugador1(inicial, BotonesEntrada.Asistencia1);
-            estado = SimularEquipos(estado, BotonesEntrada.Ninguno, BotonesEntrada.Ninguno, FramesEntrada);
+            estado = SimularEquipos(estado, BotonesEntrada.Ninguno, BotonesEntrada.Ninguno, FramesHastaActuarTrasEntrar);
             estado = ConVidasActivas(estado, estado.Duelo.Luchador1.Vida, 100);
             estado = SimularEquipos(estado, BotonesEntrada.Debil, BotonesEntrada.Ninguno, 1);
             estado = SimularEquipos(estado, BotonesEntrada.Ninguno, BotonesEntrada.Ninguno, 4);
