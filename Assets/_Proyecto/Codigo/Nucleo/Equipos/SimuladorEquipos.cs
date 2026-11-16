@@ -36,10 +36,20 @@ namespace FgcTag.Nucleo.Equipos
             var (equipo2ConAsistente, golpeado1, barra2) = AvanzarAsistente(equipo2, configuracion.Equipo2, luchador2.Barra, luchador1, reglasDuelo.Jugador1, entradas.Jugador1, reglasDuelo, configuracion);
 
             var dueloPreparado = new EstadoPartida(estado.Duelo.Frame, golpeado1.ConBarra(Math.Max(golpeado1.Barra, barra1)), golpeado2.ConBarra(Math.Max(golpeado2.Barra, barra2)), estado.Duelo.FramesRestantes, estado.Duelo.Resultado);
-            var duelo = SimuladorCombate.Avanzar(dueloPreparado, entradas, reglasDuelo);
+            var dueloAvanzado = SimuladorCombate.Avanzar(dueloPreparado, entradas, reglasDuelo);
 
-            var equipo1Avanzado = AvanzarReservas(equipo1ConAsistente, enJuego, reglasDuelo.VidaRecuperable, configuracion.FramesSalida);
-            var equipo2Avanzado = AvanzarReservas(equipo2ConAsistente, enJuego, reglasDuelo.VidaRecuperable, configuracion.FramesSalida);
+            var (equipo1Golpeado, atacante2) = enJuego
+                ? GolpearAsistente(equipo1ConAsistente, configuracion.Equipo1, dueloAvanzado.Luchador2, reglasDuelo.Jugador2, reglasDuelo, configuracion)
+                : (equipo1ConAsistente, dueloAvanzado.Luchador2);
+
+            var (equipo2Golpeado, atacante1) = enJuego
+                ? GolpearAsistente(equipo2ConAsistente, configuracion.Equipo2, dueloAvanzado.Luchador1, reglasDuelo.Jugador1, reglasDuelo, configuracion)
+                : (equipo2ConAsistente, dueloAvanzado.Luchador1);
+
+            var duelo = new EstadoPartida(dueloAvanzado.Frame, atacante1, atacante2, dueloAvanzado.FramesRestantes, dueloAvanzado.Resultado);
+
+            var equipo1Avanzado = AvanzarReservas(equipo1Golpeado, enJuego, reglasDuelo.VidaRecuperable, configuracion.FramesSalida);
+            var equipo2Avanzado = AvanzarReservas(equipo2Golpeado, enJuego, reglasDuelo.VidaRecuperable, configuracion.FramesSalida);
 
             if (estado.Terminado)
             {
@@ -130,7 +140,7 @@ namespace FgcTag.Nucleo.Equipos
                 var fuePulsacionCorta = framesMantenidoAntes > 0 && framesMantenidoAntes < configuracion.FramesMantenerParaCambiar;
 
                 return fuePulsacionCorta && PuedeLlamarAsistente(activo, equipo, companero)
-                    ? (activo, LlamarAsistente(activo, equipo, companero, xRival, configuracion.FramesEsperaAsistencia), 0)
+                    ? (activo, LlamarAsistente(activo, equipo, companero, xRival, parametrosEquipo.Obtener(companero), configuracion), 0)
                     : (activo, equipo, 0);
             }
 
@@ -157,15 +167,28 @@ namespace FgcTag.Nucleo.Equipos
             equipo.VidaEnReserva(companero) > 0 &&
             EstadosAccion.PuedePedirAsistencia(activo.Accion);
 
-        /// <summary>El asistente aparece en el suelo, donde está el activo, mirando hacia el rival.</summary>
-        private static EstadoEquipo LlamarAsistente(in EstadoLuchador activo, in EstadoEquipo equipo, int companero, Fijo xRival, int framesEspera)
+        /// <summary>
+        /// El asistente aparece en el suelo, un poco por delante del activo y mirando hacia el
+        /// rival, sin salirse del escenario ni quedar detrás del rival cuando están muy cerca.
+        /// </summary>
+        private static EstadoEquipo LlamarAsistente(
+            in EstadoLuchador activo,
+            in EstadoEquipo equipo,
+            int companero,
+            Fijo xRival,
+            in ParametrosLuchador parametros,
+            in ConfiguracionEquipos configuracion)
         {
             var miraDerecha = xRival != activo.Posicion.X ? xRival > activo.Posicion.X : activo.MiraDerecha;
-            var posicion = new VectorFijo(activo.Posicion.X, Fijo.Cero);
+            var huecoHastaElRival = Fijo.Max(Fijo.Abs(xRival - activo.Posicion.X) - parametros.MedioAnchoEmpuje, Fijo.Cero);
+            var x = Fijo.Limitar(
+                activo.Posicion.X + Fijo.Min(configuracion.DistanciaAsistencia, huecoHastaElRival) * (miraDerecha ? 1 : -1),
+                configuracion.Reglas.LimiteIzquierdo + parametros.MedioAnchoEmpuje,
+                configuracion.Reglas.LimiteDerecho - parametros.MedioAnchoEmpuje);
 
             return equipo
-                .ConAsistente(EstadoAsistente.Llamado(companero, posicion, miraDerecha))
-                .ConEsperaAsistencia(framesEspera);
+                .ConAsistente(EstadoAsistente.Llamado(companero, new VectorFijo(x, Fijo.Cero), miraDerecha))
+                .ConEsperaAsistencia(configuracion.FramesEsperaAsistencia);
         }
 
         /// <summary>
@@ -281,10 +304,19 @@ namespace FgcTag.Nucleo.Equipos
                 return (equipo.ConAsistente(asistente.ConHitstop(asistente.FramesHitstop - 1)), rival, barra);
             }
 
+            if (asistente.FueGolpeado)
+            {
+                var aturdido = asistente.FramesAturdimiento > 1
+                    ? asistente.ConAturdimiento(asistente.FramesAturdimiento - 1)
+                    : EstadoAsistente.Ninguno;
+
+                return (equipo.ConAsistente(aturdido), rival, barra);
+            }
+
             var movimiento = parametrosEquipo.Obtener(asistente.Miembro).Movimientos.Asistencia;
             var frameDelAtaque = asistente.Frames - configuracion.FramesLlegadaAsistencia;
 
-            if (frameDelAtaque >= movimiento.DuracionTotal)
+            if (frameDelAtaque >= movimiento.DuracionTotal + configuracion.FramesRetiradaAsistencia)
             {
                 return (equipo.ConAsistente(EstadoAsistente.Ninguno), rival, barra);
             }
@@ -311,9 +343,78 @@ namespace FgcTag.Nucleo.Equipos
         public static CajaColision CajaGolpeDelAsistente(in EstadoAsistente asistente, in DatosMovimiento movimiento) =>
             movimiento.CajaGolpe.Orientada(asistente.MiraDerecha).Desplazada(asistente.Posicion);
 
+        /// <summary>Caja de daño del asistente en el escenario: la de su luchador de pie.</summary>
+        public static CajaColision CajaDanioDelAsistente(in EstadoAsistente asistente, in ParametrosLuchador parametros)
+        {
+            var medidas = parametros.MedidasDanio;
+            var centro = new VectorFijo(asistente.Posicion.X, asistente.Posicion.Y + medidas.MedioAltoDePie);
+
+            return new CajaColision(centro, medidas.MedioAncho, medidas.MedioAltoDePie);
+        }
+
+        /// <summary>
+        /// Un ataque del luchador activo rival que alcanza al asistente lo golpea una vez: le hace
+        /// más daño que a un luchador normal, todo recuperable desde la reserva, le corta el
+        /// ataque y lo deja aturdido; si se queda sin vida, cae noqueado. El atacante entra en
+        /// hitstop y puede cancelar el ataque como si hubiera conectado, salvo que ese mismo
+        /// ataque ya golpeara al luchador activo: entonces golpea a los dos.
+        /// </summary>
+        /// <returns>El equipo del asistente y el luchador rival tras el golpe.</returns>
+        private static (EstadoEquipo, EstadoLuchador) GolpearAsistente(
+            in EstadoEquipo equipo,
+            in ParametrosEquipo parametrosEquipo,
+            in EstadoLuchador rival,
+            in ParametrosLuchador parametrosRival,
+            in ConfiguracionCombate reglasDuelo,
+            in ConfiguracionEquipos configuracion)
+        {
+            var asistente = equipo.Asistente;
+
+            if (!asistente.EnPantalla)
+            {
+                return (equipo, rival);
+            }
+
+            var cajaGolpe = parametrosRival.CajaGolpeActiva(rival);
+            var esOtroAtaque = !EstadosAccion.EstaAtacando(rival.Accion) || rival.FramesEnAccion < asistente.FrameDelGolpeRecibido;
+            var vulnerable = esOtroAtaque ? asistente.SinGolpeRecordado() : asistente;
+
+            var golpea = cajaGolpe.HasValue &&
+                !vulnerable.YaLoGolpeoElAtaqueEnElFrame(rival.FramesEnAccion) &&
+                cajaGolpe.Value.Intersecta(CajaDanioDelAsistente(asistente, parametrosEquipo.Obtener(asistente.Miembro)));
+
+            if (!golpea)
+            {
+                return (equipo.ConAsistente(vulnerable), rival);
+            }
+
+            var movimiento = parametrosRival.MovimientoEnCurso(rival);
+            var danio = reglasDuelo.Danio.Escalar(movimiento.Danio, asistente.GolpesRecibidos + 1) * configuracion.PorcentajeDanioAAsistentes / 100;
+            var reserva = equipo.Reserva(asistente.Miembro);
+            var vida = reserva.Vida > danio ? reserva.Vida - danio : 0;
+
+            var equipoGolpeado = vida > 0
+                ? equipo
+                    .ConReserva(asistente.Miembro, new VidaEnReserva(vida, reserva.Recuperable + reserva.Vida - vida))
+                    .ConAsistente(vulnerable.TrasRecibirGolpe(movimiento.Hitstop + movimiento.Hitstun, rival.FramesEnAccion))
+                : equipo
+                    .ConReserva(asistente.Miembro, new VidaEnReserva(0, 0))
+                    .ConAsistente(EstadoAsistente.Ninguno);
+
+            var atacante = rival.GolpeConectado
+                ? rival
+                : rival
+                    .ConGolpeConectado(true)
+                    .ConBarra(reglasDuelo.Barra.AlConectar(rival.Barra, movimiento.Danio))
+                    .ConHitstop(movimiento.Hitstop);
+
+            return (equipoGolpeado, atacante);
+        }
+
         /// <summary>
         /// Descuenta las esperas y, con el duelo en marcha, regenera la vida recuperable de los
-        /// compañeros en reserva: más deprisa que en pantalla y sin espera.
+        /// compañeros en reserva: más deprisa que en pantalla y sin espera. El compañero que está
+        /// en pantalla como asistente no regenera hasta volver a la reserva.
         /// </summary>
         private static EstadoEquipo AvanzarReservas(in EstadoEquipo equipo, bool enJuego, in ReglasVidaRecuperable reglas, int framesSalida)
         {
@@ -334,7 +435,9 @@ namespace FgcTag.Nucleo.Equipos
                 var indice = conEsperas.IndiceDelCompanero(pasos);
                 var reserva = conEsperas.Reserva(indice);
 
-                if (reserva.Vida > 0 && reserva.Recuperable > 0)
+                var estaAsistiendo = conEsperas.Asistente.EnPantalla && conEsperas.Asistente.Miembro == indice;
+
+                if (reserva.Vida > 0 && reserva.Recuperable > 0 && !estaAsistiendo)
                 {
                     var curacion = ReglasVidaRecuperable.Curacion(reserva.Recuperable, reglas.RegeneracionEnReservaPorFrame);
                     regenerado = regenerado.ConReserva(indice, new VidaEnReserva(reserva.Vida + curacion, reserva.Recuperable - curacion));

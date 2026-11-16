@@ -28,6 +28,7 @@ namespace FgcTag.Nucleo.Combate
         public readonly int VidaMaxima;
 
         public readonly ParametrosSalto Salto;
+        public readonly ParametrosDash Dash;
         public readonly MedidasCajaDanio MedidasDanio;
 
         public readonly MovimientosLuchador Movimientos;
@@ -41,6 +42,7 @@ namespace FgcTag.Nucleo.Combate
             Fijo medioAnchoEmpujeAire,
             Fijo medioAltoEmpujeAire,
             ParametrosSalto salto,
+            ParametrosDash dash,
             MedidasCajaDanio medidasDanio,
             MovimientosLuchador movimientos)
         {
@@ -68,6 +70,7 @@ namespace FgcTag.Nucleo.Combate
             MedioAnchoEmpujeAire = medioAnchoEmpujeAire;
             MedioAltoEmpujeAire = medioAltoEmpujeAire;
             Salto = salto;
+            Dash = dash;
             MedidasDanio = medidasDanio;
             Movimientos = movimientos;
         }

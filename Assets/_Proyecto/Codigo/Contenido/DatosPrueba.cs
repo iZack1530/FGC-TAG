@@ -35,7 +35,7 @@ namespace FgcTag.Contenido
             hitstun: 14,
             hitstunAereo: 20,
             blockstun: 10,
-            hitstop: 8,
+            hitstop: 4,
             danio: 300,
             retrocesoAlGolpear: Fijo.DesdeFraccion(6, 100),
             retrocesoAlBloquear: Fijo.DesdeFraccion(8, 100),
@@ -55,7 +55,7 @@ namespace FgcTag.Contenido
             hitstun: 17,
             hitstunAereo: 22,
             blockstun: 13,
-            hitstop: 10,
+            hitstop: 8,
             danio: 600,
             retrocesoAlGolpear: Fijo.DesdeFraccion(7, 100),
             retrocesoAlBloquear: Fijo.DesdeFraccion(10, 100),
@@ -75,7 +75,7 @@ namespace FgcTag.Contenido
             hitstun: 21,
             hitstunAereo: 24,
             blockstun: 16,
-            hitstop: 12,
+            hitstop: 13,
             danio: 900,
             retrocesoAlGolpear: Fijo.DesdeFraccion(8, 100),
             retrocesoAlBloquear: Fijo.DesdeFraccion(12, 100),
@@ -92,7 +92,7 @@ namespace FgcTag.Contenido
             hitstun: 13,
             hitstunAereo: 20,
             blockstun: 10,
-            hitstop: 8,
+            hitstop: 4,
             danio: 250,
             retrocesoAlGolpear: Fijo.DesdeFraccion(6, 100),
             retrocesoAlBloquear: Fijo.DesdeFraccion(8, 100),
@@ -110,7 +110,7 @@ namespace FgcTag.Contenido
             hitstun: 17,
             hitstunAereo: 22,
             blockstun: 13,
-            hitstop: 10,
+            hitstop: 8,
             danio: 550,
             retrocesoAlGolpear: Fijo.DesdeFraccion(7, 100),
             retrocesoAlBloquear: Fijo.DesdeFraccion(10, 100),
@@ -128,7 +128,7 @@ namespace FgcTag.Contenido
             hitstun: 21,
             hitstunAereo: 24,
             blockstun: 16,
-            hitstop: 12,
+            hitstop: 13,
             danio: 850,
             retrocesoAlGolpear: Fijo.DesdeFraccion(8, 100),
             retrocesoAlBloquear: Fijo.DesdeFraccion(12, 100),
@@ -150,7 +150,7 @@ namespace FgcTag.Contenido
             hitstun: 20,
             hitstunAereo: 30,
             blockstun: 15,
-            hitstop: 12,
+            hitstop: 13,
             danio: 800,
             retrocesoAlGolpear: Fijo.DesdeFraccion(2, 100),
             retrocesoAlBloquear: Fijo.DesdeFraccion(10, 100),
@@ -169,7 +169,7 @@ namespace FgcTag.Contenido
             hitstun: 14,
             hitstunAereo: 22,
             blockstun: 10,
-            hitstop: 8,
+            hitstop: 4,
             danio: 300,
             retrocesoAlGolpear: Fijo.DesdeFraccion(3, 100),
             retrocesoAlBloquear: Fijo.DesdeFraccion(6, 100),
@@ -187,7 +187,7 @@ namespace FgcTag.Contenido
             hitstun: 17,
             hitstunAereo: 24,
             blockstun: 13,
-            hitstop: 10,
+            hitstop: 8,
             danio: 550,
             retrocesoAlGolpear: Fijo.DesdeFraccion(3, 100),
             retrocesoAlBloquear: Fijo.DesdeFraccion(8, 100),
@@ -205,7 +205,7 @@ namespace FgcTag.Contenido
             hitstun: 21,
             hitstunAereo: 26,
             blockstun: 16,
-            hitstop: 12,
+            hitstop: 13,
             danio: 800,
             retrocesoAlGolpear: Fijo.DesdeFraccion(4, 100),
             retrocesoAlBloquear: Fijo.DesdeFraccion(10, 100),
@@ -282,11 +282,38 @@ namespace FgcTag.Contenido
         /// <summary>
         /// El agarre sale si el rival está en tierra a 1.3 m o menos; más lejos sale el golpe fuerte.
         /// Tras salir de un hitstun, un blockstun, un derribo o una recuperación aérea, el luchador
-        /// no puede ser agarrado durante 8 frames.
+        /// no puede ser agarrado durante 8 frames. El rival sujeto tiene 9 frames para escapar
+        /// pulsando una dirección más el golpe fuerte; un agarre roto separa a los dos 20 frames.
         /// </summary>
         public static readonly ReglasAgarre AgarresCajasGrises = new ReglasAgarre(
             framesProteccion: 8,
-            distanciaActivacion: Fijo.DesdeFraccion(13, 10));
+            distanciaActivacion: Fijo.DesdeFraccion(13, 10),
+            framesVentanaEscape: 9,
+            framesAgarreRoto: 20,
+            retrocesoAlEscapar: Fijo.DesdeFraccion(9, 100));
+
+        /// <summary>
+        /// Dash: dos botones de golpe a la vez, hacia el rival o, manteniendo atrás, alejándose.
+        /// En tierra arranca a 0.19 m/frame (0.16 hacia atrás) y pierde 0.012 por frame: recorre
+        /// 1.6 m en sus 20 frames, los últimos ya parado, frente a 1.2 m caminando. Reiniciarlo
+        /// mantiene la velocidad alta: con wavedash (agacharse desde el frame 7) se va a unos
+        /// 0.135 m/frame y con plink dash (ataque desde el frame 3 y segundo botón en sus 2
+        /// primeros frames) a unos 0.17. El ataque que cancela un dash hereda su impulso. El dash
+        /// aéreo dura 14 frames a 0.13 m/frame, una vez por salto y a 0.7 m de altura o más; se
+        /// cancela con un ataque aéreo desde el frame 4.
+        /// </summary>
+        public static readonly ParametrosDash DashCajaGris = new ParametrosDash(
+            framesDash: 20,
+            framesMinimosParaCancelar: 7,
+            framesMinimosParaAtacar: 3,
+            velocidadAdelante: Fijo.DesdeFraccion(19, 100),
+            velocidadAtras: Fijo.DesdeFraccion(16, 100),
+            friccion: Fijo.DesdeFraccion(12, 1000),
+            ventanaPlink: 2,
+            framesDashAereo: 14,
+            framesMinimosDashAereo: 4,
+            velocidadDashAereo: Fijo.DesdeFraccion(13, 100),
+            alturaMinimaDashAereo: Fijo.DesdeFraccion(7, 10));
 
         /// <summary>
         /// Barra de súper: 7 barras de 1000 unidades. Del daño base de cada movimiento: 3 % al
@@ -314,6 +341,7 @@ namespace FgcTag.Contenido
             medioAnchoEmpujeAire: Fijo.DesdeFraccion(3, 10),
             medioAltoEmpujeAire: Fijo.DesdeFraccion(5, 10),
             salto: SaltoCajaGris,
+            dash: DashCajaGris,
             medidasDanio: CajaDanioCajaGris,
             movimientos: new MovimientosLuchador(
                 debil: GolpeDebilCajaGris,
@@ -350,7 +378,9 @@ namespace FgcTag.Contenido
         /// Combate 3 contra 3. Mantener un botón de asistencia 10 frames cambia de luchador: el que
         /// sale se marcha saltando hacia atrás y el que entra llega con un salto de 24 frames desde
         /// 2.5 m detrás; cada equipo espera 2 segundos entre cambios. Soltar el botón antes llama
-        /// al asistente, que tarda 12 frames en llegar, con 3 segundos de espera para llamar a otro.
+        /// al asistente: aparece hasta 0.9 m por delante, tarda 18 frames en atacar y se queda 20 frames más
+        /// tras su ataque; mientras está en pantalla el rival puede golpearlo con un 50 % más de
+        /// daño, todo recuperable. Hay 3 segundos de espera para llamar a otro.
         /// Tras un K.O., el luchador derrotado se queda en el suelo 3.5 segundos y entonces entra
         /// saltando el siguiente, a 4 m del rival.
         /// </summary>
@@ -362,12 +392,15 @@ namespace FgcTag.Contenido
             framesPausaNocaut: 210,
             distanciaEntrada: Fijo.DesdeEntero(4),
             framesMantenerParaCambiar: 10,
-            framesLlegadaAsistencia: 12,
+            framesLlegadaAsistencia: 18,
             framesEsperaAsistencia: 180,
             framesEntrada: 24,
             desplazamientoEntrada: new VectorFijo(Fijo.DesdeFraccion(25, 10), Fijo.DesdeFraccion(22, 10)),
             framesSalida: 24,
-            velocidadSalida: new VectorFijo(Fijo.DesdeFraccion(12, 100), Fijo.DesdeFraccion(12, 100)));
+            velocidadSalida: new VectorFijo(Fijo.DesdeFraccion(12, 100), Fijo.DesdeFraccion(12, 100)),
+            framesRetiradaAsistencia: 20,
+            distanciaAsistencia: Fijo.DesdeFraccion(9, 10),
+            porcentajeDanioAAsistentes: 150);
 
         public static readonly EstadoCombateEquipos CombateInicial = EstadoCombateEquipos.Crear(
             VectorFijo.DesdeEnteros(-2, 0),

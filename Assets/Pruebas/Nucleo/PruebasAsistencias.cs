@@ -8,7 +8,7 @@ namespace FgcTag.Pruebas.Nucleo
 {
     /// <summary>
     /// Con el escenario de prueba: pulsar y soltar un botón de asistencia llama al asistente en el
-    /// frame 2; tarda 6 frames en llegar y su golpe medio (200 de daño, 10 de hitstop) conecta en
+    /// frame 2, 1 unidad por delante del activo; tarda 6 frames en llegar y su golpe medio (200 de daño, 10 de hitstop) conecta en
     /// el frame 14. Mantener el botón 4 frames cambia de luchador. La reserva regenera 5 por frame.
     /// </summary>
     public class PruebasAsistencias
@@ -32,7 +32,7 @@ namespace FgcTag.Pruebas.Nucleo
             Assert.AreEqual(0, estado.Equipo1.IndiceActivo);
             Assert.IsTrue(estado.Equipo1.Asistente.EnPantalla);
             Assert.AreEqual(1, estado.Equipo1.Asistente.Miembro);
-            Assert.AreEqual(VectorFijo.DesdeEnteros(-2, 0), estado.Equipo1.Asistente.Posicion);
+            Assert.AreEqual(VectorFijo.DesdeEnteros(-1, 0), estado.Equipo1.Asistente.Posicion);
             Assert.IsTrue(estado.Equipo1.Asistente.MiraDerecha);
             Assert.AreEqual(AccionLuchador.Quieto, estado.Duelo.Luchador1.Accion);
         }
@@ -73,9 +73,9 @@ namespace FgcTag.Pruebas.Nucleo
         }
 
         [Test]
-        public void ElAsistenteSeMarchaAlTerminarSuAtaque()
+        public void ElAsistenteSeMarchaUnosFramesDespuesDeSuAtaque()
         {
-            var ultimoFrame = FrameDeLlamada + FramesLlegadaAsistencia + GolpeMedio.DuracionTotal - 1;
+            var ultimoFrame = FrameDeLlamada + FramesLlegadaAsistencia + GolpeMedio.DuracionTotal + FramesRetiradaAsistencia - 1;
             var estado = AsistenciaHastaElFrame(InicialPorEquipos(-5, 5), BotonesEntrada.Ninguno, ultimoFrame);
 
             Assert.IsTrue(estado.Equipo1.Asistente.EnPantalla);
@@ -88,7 +88,7 @@ namespace FgcTag.Pruebas.Nucleo
         [Test]
         public void LaAsistenciaTieneEsperaAntesDeRepetirse()
         {
-            var estado = AsistenciaHastaElFrame(InicialPorEquipos(-5, 5), BotonesEntrada.Ninguno, 40);
+            var estado = AsistenciaHastaElFrame(InicialPorEquipos(-5, 5), BotonesEntrada.Ninguno, 60);
 
             Assert.IsFalse(estado.Equipo1.Asistente.EnPantalla);
 
@@ -172,6 +172,118 @@ namespace FgcTag.Pruebas.Nucleo
             estado = SimularEquipos(estado, BotonesEntrada.Ninguno, BotonesEntrada.Ninguno, 1);
 
             Assert.IsFalse(estado.Equipo1.Asistente.EnPantalla);
+        }
+
+        /// <summary>
+        /// Con el jugador 1 en 0 y el rival en 3, el asistente aparece en 1. El golpe medio del
+        /// rival (200 de daño, 10 de hitstop, 17 de hitstun), pulsado en el frame 1, alcanza de 1
+        /// a 3: golpea al asistente en el frame 7 y no llega al luchador activo.
+        /// </summary>
+        private const int FrameDelGolpeAlAsistente = 7;
+
+        private static EstadoCombateEquipos GolpeMedioAlAsistenteHasta(EstadoCombateEquipos inicial, int frame)
+        {
+            var estado = LlamarAsistenteJugador1(inicial, BotonesEntrada.Asistencia1, BotonesEntrada.Medio);
+
+            return SimularEquipos(estado, BotonesEntrada.Ninguno, BotonesEntrada.Ninguno, frame - FrameDeLlamada);
+        }
+
+        [Test]
+        public void ElRivalGolpeaAlAsistenteConMasDanioYTodoRecuperable()
+        {
+            var antes = GolpeMedioAlAsistenteHasta(InicialPorEquipos(0, 3), FrameDelGolpeAlAsistente - 1);
+
+            Assert.AreEqual(VidaSegundo, antes.Equipo1.VidaEnReserva(1));
+
+            var estado = SimularEquipos(antes, BotonesEntrada.Ninguno, BotonesEntrada.Ninguno, 1);
+
+            Assert.AreEqual(VidaSegundo - 300, estado.Equipo1.VidaEnReserva(1));
+            Assert.AreEqual(300, estado.Equipo1.Reserva(1).Recuperable);
+            Assert.IsTrue(estado.Equipo1.Asistente.FueGolpeado);
+            Assert.AreEqual(27, estado.Equipo1.Asistente.FramesAturdimiento);
+            Assert.AreEqual(VidaMaxima, estado.Duelo.Luchador1.Vida);
+        }
+
+        [Test]
+        public void GolpearAlAsistenteCuentaComoGolpeConectadoParaElAtacante()
+        {
+            var estado = GolpeMedioAlAsistenteHasta(InicialPorEquipos(0, 3), FrameDelGolpeAlAsistente);
+
+            Assert.IsTrue(estado.Duelo.Luchador2.GolpeConectado);
+            Assert.AreEqual(10, estado.Duelo.Luchador2.FramesHitstop);
+            Assert.AreEqual(10 + 40, estado.Duelo.Luchador2.Barra);
+        }
+
+        [Test]
+        public void ElMismoAtaqueGolpeaAlAsistenteUnaSolaVez()
+        {
+            var estado = GolpeMedioAlAsistenteHasta(InicialPorEquipos(0, 3), FrameDelGolpeAlAsistente + 14);
+
+            Assert.AreEqual(VidaSegundo - 300, estado.Equipo1.VidaEnReserva(1));
+        }
+
+        [Test]
+        public void ElAsistenteGolpeadoPierdeSuAtaqueYSeRetiraAlRecuperarse()
+        {
+            var estado = GolpeMedioAlAsistenteHasta(InicialPorEquipos(0, 3), FrameDelGolpeAlAsistente + 26);
+
+            Assert.IsTrue(estado.Equipo1.Asistente.EnPantalla);
+            Assert.IsFalse(estado.Equipo1.Asistente.GolpeConectado);
+            Assert.AreEqual(VidaMaxima, estado.Duelo.Luchador2.Vida);
+
+            estado = SimularEquipos(estado, BotonesEntrada.Ninguno, BotonesEntrada.Ninguno, 1);
+
+            Assert.IsFalse(estado.Equipo1.Asistente.EnPantalla);
+        }
+
+        [Test]
+        public void ElAsistenteRecuperaTodoElDanioAlVolverALaReserva()
+        {
+            var estado = GolpeMedioAlAsistenteHasta(InicialPorEquipos(0, 3), FrameDelGolpeAlAsistente + 26);
+
+            Assert.AreEqual(VidaSegundo - 300, estado.Equipo1.VidaEnReserva(1), "Mientras está en pantalla no regenera");
+
+            estado = SimularEquipos(estado, BotonesEntrada.Ninguno, BotonesEntrada.Ninguno, 1 + 60);
+
+            Assert.AreEqual(VidaSegundo, estado.Equipo1.VidaEnReserva(1));
+            Assert.AreEqual(0, estado.Equipo1.Reserva(1).Recuperable);
+        }
+
+        [Test]
+        public void UnSoloAtaquePuedeGolpearAlLuchadorYASuAsistente()
+        {
+            var estado = GolpeMedioAlAsistenteHasta(InicialPorEquipos(0, 2), FrameDelGolpeAlAsistente);
+
+            Assert.AreEqual(VidaMaxima - 200, estado.Duelo.Luchador1.Vida);
+            Assert.AreEqual(VidaSegundo - 300, estado.Equipo1.VidaEnReserva(1));
+            Assert.AreEqual(10 + 40, estado.Duelo.Luchador2.Barra);
+        }
+
+        [Test]
+        public void UnAsistenteSinVidaCaeNoqueadoYYaNoSePuedeLlamar()
+        {
+            var inicial = InicialPorEquipos(0, 3);
+            var estado = GolpeMedioAlAsistenteHasta(ConEquipo1(inicial, inicial.Equipo1.ConVidaEnReserva(1, 200)), FrameDelGolpeAlAsistente);
+
+            Assert.IsFalse(estado.Equipo1.Asistente.EnPantalla);
+            Assert.AreEqual(0, estado.Equipo1.VidaEnReserva(1));
+            Assert.AreEqual(0, estado.Equipo1.Reserva(1).Recuperable);
+
+            estado = SimularEquipos(estado, BotonesEntrada.Ninguno, BotonesEntrada.Ninguno, FramesEsperaAsistencia);
+            estado = LlamarAsistenteJugador1(estado, BotonesEntrada.Asistencia1, BotonesEntrada.Ninguno);
+
+            Assert.IsFalse(estado.Equipo1.Asistente.EnPantalla);
+        }
+
+        [Test]
+        public void ElAsistenteNoSeSaleDelEscenario()
+        {
+            var estado = LlamarAsistenteJugador1(InicialPorEquipos(9, -5), BotonesEntrada.Asistencia1, BotonesEntrada.Ninguno);
+            var alOtroLado = LlamarAsistenteJugador1(InicialPorEquipos(-5, -7), BotonesEntrada.Asistencia1, BotonesEntrada.Ninguno);
+
+            Assert.AreEqual(Fijo.DesdeEntero(8), estado.Equipo1.Asistente.Posicion.X);
+            Assert.AreEqual(Fijo.DesdeEntero(-6), alOtroLado.Equipo1.Asistente.Posicion.X);
+            Assert.IsFalse(alOtroLado.Equipo1.Asistente.MiraDerecha);
         }
 
         [Test]

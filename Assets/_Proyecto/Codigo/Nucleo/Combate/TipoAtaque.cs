@@ -18,6 +18,20 @@ namespace FgcTag.Nucleo.Combate
 
     public static class LecturaAtaques
     {
+        /// <summary>Dos de los tres botones de golpe (débil, medio, fuerte) mantenidos a la vez: el comando del dash.</summary>
+        public static bool DosGolpesMantenidos(BotonesEntrada botones)
+        {
+            var debil = InterpretacionEntradas.Tiene(botones, BotonesEntrada.Debil) ? 1 : 0;
+            var medio = InterpretacionEntradas.Tiene(botones, BotonesEntrada.Medio) ? 1 : 0;
+            var fuerte = InterpretacionEntradas.Tiene(botones, BotonesEntrada.Fuerte) ? 1 : 0;
+
+            return debil + medio + fuerte >= 2;
+        }
+
+        /// <summary>Débil, medio o fuerte: los botones que cuentan para el dash.</summary>
+        public static bool EsGolpe(TipoAtaque ataque) =>
+            ataque == TipoAtaque.Debil || ataque == TipoAtaque.Medio || ataque == TipoAtaque.Fuerte;
+
         /// <summary>
         /// Ataque que el jugador acaba de pulsar en este frame (no cuenta mantener el botón).
         /// Si pulsa varios a la vez, gana el más fuerte.

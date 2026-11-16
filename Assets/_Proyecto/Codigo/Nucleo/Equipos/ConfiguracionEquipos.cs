@@ -49,6 +49,15 @@ namespace FgcTag.Nucleo.Equipos
         /// <summary>Velocidad por frame del salto de salida: X hacia atrás e Y hacia arriba.</summary>
         public readonly VectorFijo VelocidadSalida;
 
+        /// <summary>Frames que el asistente permanece en pantalla, vulnerable, después de terminar su ataque.</summary>
+        public readonly int FramesRetiradaAsistencia;
+
+        /// <summary>Distancia por delante del luchador activo a la que aparece el asistente.</summary>
+        public readonly Fijo DistanciaAsistencia;
+
+        /// <summary>Porcentaje del daño normal que recibe un asistente golpeado; por ejemplo 150 es un 50 % más.</summary>
+        public readonly int PorcentajeDanioAAsistentes;
+
         public ConfiguracionEquipos(
             ParametrosEquipo equipo1,
             ParametrosEquipo equipo2,
@@ -62,8 +71,16 @@ namespace FgcTag.Nucleo.Equipos
             int framesEntrada,
             VectorFijo desplazamientoEntrada,
             int framesSalida,
-            VectorFijo velocidadSalida)
+            VectorFijo velocidadSalida,
+            int framesRetiradaAsistencia,
+            Fijo distanciaAsistencia,
+            int porcentajeDanioAAsistentes)
         {
+            if (framesRetiradaAsistencia < 0 || distanciaAsistencia < Fijo.Cero || porcentajeDanioAAsistentes < 100)
+            {
+                throw new ArgumentOutOfRangeException(nameof(framesRetiradaAsistencia), "La retirada y la distancia del asistente no pueden ser negativas, y el asistente recibe al menos el 100 % del daño.");
+            }
+
             if (framesEntrada < 1 || framesSalida < 1)
             {
                 throw new ArgumentOutOfRangeException(nameof(framesEntrada), "Los saltos de entrada y de salida duran al menos 1 frame.");
@@ -107,6 +124,9 @@ namespace FgcTag.Nucleo.Equipos
             DesplazamientoEntrada = desplazamientoEntrada;
             FramesSalida = framesSalida;
             VelocidadSalida = velocidadSalida;
+            FramesRetiradaAsistencia = framesRetiradaAsistencia;
+            DistanciaAsistencia = distanciaAsistencia;
+            PorcentajeDanioAAsistentes = porcentajeDanioAAsistentes;
         }
 
         /// <summary>Configuración del duelo entre los luchadores que cada equipo tiene en pantalla.</summary>

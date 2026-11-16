@@ -9,7 +9,8 @@ namespace FgcTag.Pruebas.Nucleo
     /// Con el escenario de prueba y los luchadores pegados (en 0 y en 1): una dirección más el
     /// golpe fuerte pulsados en el frame 1 inician un agarre que atrapa en el frame 4; el rival
     /// sale lanzado en el 14 con 250 de daño y quien agarra recupera el control en el 29. Si el
-    /// agarre falla, dura 25 frames. La protección tras un aturdimiento dura 8 frames.
+    /// agarre falla, dura 25 frames. La protección tras un aturdimiento dura 8 frames. El rival sujeto
+    /// puede escapar durante 9 frames (del 5 al 13); un agarre roto separa a los dos 12 frames.
     /// </summary>
     public class PruebasAgarres
     {
@@ -111,17 +112,19 @@ namespace FgcTag.Pruebas.Nucleo
         }
 
         [Test]
-        public void AgarrarHaciaAtrasInvierteLasPosicionesYLanzaHaciaElOtroLado()
+        public void AgarrarHaciaAtrasInvierteLasPosicionesAlLanzar()
         {
-            var estado = AgarreHasta(Inicial(0, 1), AgarreAtras, BotonesEntrada.Ninguno, FrameDelAgarre);
+            var sujeto = AgarreHasta(Inicial(0, 1), AgarreAtras, BotonesEntrada.Ninguno, FrameDelLanzamiento - 1);
 
-            Assert.AreEqual(AccionLuchador.Agarrando, estado.Luchador1.Accion);
+            Assert.AreEqual(AccionLuchador.Agarrando, sujeto.Luchador1.Accion);
+            Assert.AreEqual(Fijo.Cero, sujeto.Luchador1.Posicion.X);
+            Assert.IsTrue(sujeto.Luchador1.MiraDerecha);
+
+            var estado = Simular(sujeto, BotonesEntrada.Ninguno, BotonesEntrada.Ninguno, 1);
+
             Assert.AreEqual(Fijo.Uno, estado.Luchador1.Posicion.X);
             Assert.AreEqual(Fijo.Cero, estado.Luchador2.Posicion.X);
             Assert.IsFalse(estado.Luchador1.MiraDerecha);
-
-            estado = Simular(estado, BotonesEntrada.Ninguno, BotonesEntrada.Ninguno, FrameDelLanzamiento - FrameDelAgarre);
-
             Assert.AreEqual(AccionLuchador.GolpeadoEnAire, estado.Luchador2.Accion);
             Assert.IsTrue(estado.Luchador2.Velocidad.X < Fijo.Cero);
         }
@@ -243,13 +246,100 @@ namespace FgcTag.Pruebas.Nucleo
         }
 
         [Test]
-        public void DosAgarresEnElMismoFrameSeAnulan()
+        public void DosAgarresEnElMismoFrameSeRompen()
         {
             var estado = Simular(Inicial(0, 1), AgarreAdelante, BotonesEntrada.Izquierda | BotonesEntrada.Fuerte, 1);
-            estado = Simular(estado, BotonesEntrada.Ninguno, BotonesEntrada.Ninguno, FrameDelAgarre);
+            estado = Simular(estado, BotonesEntrada.Ninguno, BotonesEntrada.Ninguno, FrameDelAgarre - 1);
 
-            Assert.AreEqual(AccionLuchador.IntentandoAgarre, estado.Luchador1.Accion);
-            Assert.AreEqual(AccionLuchador.IntentandoAgarre, estado.Luchador2.Accion);
+            Assert.AreEqual(AccionLuchador.AgarreRoto, estado.Luchador1.Accion);
+            Assert.AreEqual(AccionLuchador.AgarreRoto, estado.Luchador2.Accion);
+        }
+
+        [Test]
+        public void AgarrarAQuienYaIntentabaSuAgarreLoRompe()
+        {
+            var estado = Simular(Inicial(0, 1), AgarreAdelante, BotonesEntrada.Ninguno, 1);
+            estado = Simular(estado, BotonesEntrada.Ninguno, BotonesEntrada.Izquierda | BotonesEntrada.Fuerte, 1);
+            estado = Simular(estado, BotonesEntrada.Ninguno, BotonesEntrada.Ninguno, FrameDelAgarre - 2);
+
+            Assert.AreEqual(AccionLuchador.AgarreRoto, estado.Luchador1.Accion);
+            Assert.AreEqual(AccionLuchador.AgarreRoto, estado.Luchador2.Accion);
+            Assert.AreEqual(VidaMaxima, estado.Luchador2.Vida);
+        }
+
+        [Test]
+        public void ElRivalSujetoEscapaPulsandoElComandoDelAgarre()
+        {
+            var estado = AgarreHasta(Inicial(0, 1), AgarreAdelante, BotonesEntrada.Ninguno, FrameDelAgarre);
+            estado = Simular(estado, BotonesEntrada.Ninguno, BotonesEntrada.Derecha | BotonesEntrada.Fuerte, 1);
+
+            Assert.AreEqual(AccionLuchador.AgarreRoto, estado.Luchador1.Accion);
+            Assert.AreEqual(AccionLuchador.AgarreRoto, estado.Luchador2.Accion);
+            Assert.AreEqual(Fijo.DesdeFraccion(-1, 8), estado.Luchador1.Velocidad.X);
+            Assert.AreEqual(Fijo.DesdeFraccion(1, 8), estado.Luchador2.Velocidad.X);
+
+            estado = Simular(estado, BotonesEntrada.Ninguno, BotonesEntrada.Ninguno, 40);
+
+            Assert.AreEqual(VidaMaxima, estado.Luchador2.Vida);
+            Assert.IsTrue(estado.Luchador2.Posicion.X - estado.Luchador1.Posicion.X > Fijo.Uno);
+        }
+
+        [Test]
+        public void TrasUnAgarreRotoLosDosRecuperanElControlALaVez()
+        {
+            var estado = AgarreHasta(Inicial(0, 1), AgarreAdelante, BotonesEntrada.Ninguno, FrameDelAgarre);
+            estado = Simular(estado, BotonesEntrada.Ninguno, BotonesEntrada.Derecha | BotonesEntrada.Fuerte, 1);
+            estado = Simular(estado, BotonesEntrada.Ninguno, BotonesEntrada.Ninguno, 11);
+
+            Assert.AreEqual(AccionLuchador.AgarreRoto, estado.Luchador1.Accion);
+            Assert.AreEqual(AccionLuchador.AgarreRoto, estado.Luchador2.Accion);
+
+            estado = Simular(estado, BotonesEntrada.Ninguno, BotonesEntrada.Ninguno, 1);
+
+            Assert.AreEqual(AccionLuchador.Quieto, estado.Luchador1.Accion);
+            Assert.AreEqual(AccionLuchador.Quieto, estado.Luchador2.Accion);
+        }
+
+        [Test]
+        public void SeEscapaHastaElUltimoFrameDeLaVentana()
+        {
+            var estado = AgarreHasta(Inicial(0, 1), AgarreAdelante, BotonesEntrada.Ninguno, FrameDelAgarre + 8);
+            estado = Simular(estado, BotonesEntrada.Ninguno, BotonesEntrada.Izquierda | BotonesEntrada.Fuerte, 1);
+
+            Assert.AreEqual(AccionLuchador.AgarreRoto, estado.Luchador2.Accion);
+        }
+
+        [Test]
+        public void PasadaLaVentanaYaNoSeEscapa()
+        {
+            var estado = AgarreHasta(Inicial(0, 1), AgarreAdelante, BotonesEntrada.Ninguno, FrameDelAgarre + 9);
+            estado = Simular(estado, BotonesEntrada.Ninguno, BotonesEntrada.Izquierda | BotonesEntrada.Fuerte, 1);
+
+            Assert.AreEqual(AccionLuchador.GolpeadoEnAire, estado.Luchador2.Accion);
+            Assert.AreEqual(VidaMaxima - 250, estado.Luchador2.Vida);
+        }
+
+        [Test]
+        public void SoloUnaDireccionMasElFuerteEscapa()
+        {
+            var sujeto = AgarreHasta(Inicial(0, 1), AgarreAdelante, BotonesEntrada.Ninguno, FrameDelAgarre);
+            var sinDireccion = Simular(sujeto, BotonesEntrada.Ninguno, BotonesEntrada.Fuerte, 1);
+            var otroBoton = Simular(sujeto, BotonesEntrada.Ninguno, BotonesEntrada.Derecha | BotonesEntrada.Medio, 1);
+
+            Assert.AreEqual(AccionLuchador.Agarrado, sinDireccion.Luchador2.Accion);
+            Assert.AreEqual(AccionLuchador.Agarrado, otroBoton.Luchador2.Accion);
+        }
+
+        [Test]
+        public void MantenerElFuerteDesdeAntesDelAgarreNoEscapa()
+        {
+            var estado = Simular(Inicial(0, 1), AgarreAdelante, BotonesEntrada.Fuerte, FrameDelAgarre);
+
+            Assert.AreEqual(AccionLuchador.Agarrado, estado.Luchador2.Accion);
+
+            estado = Simular(estado, BotonesEntrada.Ninguno, BotonesEntrada.Derecha | BotonesEntrada.Fuerte, 3);
+
+            Assert.AreEqual(AccionLuchador.Agarrado, estado.Luchador2.Accion);
         }
 
         [Test]

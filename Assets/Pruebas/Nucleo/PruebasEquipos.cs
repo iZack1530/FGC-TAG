@@ -391,7 +391,7 @@ namespace FgcTag.Pruebas.Nucleo
         {
             var estado = SimularPseudoaleatorio(1530u, 900);
 
-            Assert.AreEqual("B6E229DF54603A76", estado.CalcularSumaVerificacion().ToString());
+            Assert.AreEqual("3EB19DC9D234B5E5", estado.CalcularSumaVerificacion().ToString());
         }
     }
 }
