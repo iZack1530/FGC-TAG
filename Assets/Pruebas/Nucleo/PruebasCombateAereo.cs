@@ -155,7 +155,7 @@ namespace FgcTag.Pruebas.Nucleo
                 estado = Simular(estado, BotonesEntrada.Ninguno, BotonesEntrada.Ninguno, 1);
 
                 Assert.IsFalse(estado.Luchador1.GolpeConectado);
-                Assert.AreEqual(vida, estado.Luchador2.Vida);
+                Assert.IsTrue(estado.Luchador2.Vida >= vida, "Derribado no pierde vida; solo puede regenerar la recuperable");
             }
         }
 
@@ -260,6 +260,7 @@ namespace FgcTag.Pruebas.Nucleo
             var enHitstop = false;
             var aereoPulsado = false;
             var comboMaximo = 0;
+            var vidaMinima = VidaMaxima;
             var estado = Simular(Inicial(0, 1), BotonesEntrada.Debil, BotonesEntrada.Ninguno, 1);
 
             for (var i = 0; i < 200; i++)
@@ -285,10 +286,11 @@ namespace FgcTag.Pruebas.Nucleo
 
                 estado = Simular(estado, botones, BotonesEntrada.Ninguno, 1);
                 comboMaximo = Math.Max(comboMaximo, estado.Luchador2.GolpesEnCombo);
+                vidaMinima = Math.Min(vidaMinima, estado.Luchador2.Vida);
             }
 
             Assert.AreEqual(5, comboMaximo);
-            Assert.AreEqual(VidaMaxima - (100 + 180 + 240 + 175 + 60), estado.Luchador2.Vida);
+            Assert.AreEqual(VidaMaxima - (100 + 180 + 240 + 175 + 60), vidaMinima);
             Assert.AreEqual(AccionLuchador.Quieto, estado.Luchador2.Accion);
             Assert.AreEqual(0, estado.Luchador2.GolpesEnCombo);
         }

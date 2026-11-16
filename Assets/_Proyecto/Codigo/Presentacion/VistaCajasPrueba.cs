@@ -1,4 +1,5 @@
 using FgcTag.Nucleo.Combate;
+using FgcTag.Nucleo.Equipos;
 using UnityEngine;
 
 namespace FgcTag.Presentacion
@@ -37,6 +38,8 @@ namespace FgcTag.Presentacion
         private readonly Material _materialPiso;
         private readonly LuchadorVisual _luchador1;
         private readonly LuchadorVisual _luchador2;
+        private readonly AsistenteVisual _asistente1;
+        private readonly AsistenteVisual _asistente2;
 
         public VistaCajasPrueba(Transform padre, in ConfiguracionCombate configuracion)
         {
@@ -46,6 +49,15 @@ namespace FgcTag.Presentacion
             _materialPiso = CrearPiso(_raiz.transform, configuracion);
             _luchador1 = new LuchadorVisual("Jugador1", _raiz.transform, configuracion.Jugador1, ColoresJugador1[0]);
             _luchador2 = new LuchadorVisual("Jugador2", _raiz.transform, configuracion.Jugador2, ColoresJugador2[0]);
+            _asistente1 = new AsistenteVisual("Asistente1", _raiz.transform);
+            _asistente2 = new AsistenteVisual("Asistente2", _raiz.transform);
+        }
+
+        /// <summary>Dibuja al asistente de cada equipo, si lo hay, con el tono de ese miembro y su caja de golpe.</summary>
+        public void MostrarAsistentes(in EstadoEquipo equipo1, in EstadoEquipo equipo2, in ConfiguracionEquipos configuracion)
+        {
+            _asistente1.Mostrar(equipo1.Asistente, configuracion.Equipo1, ColoresJugador1, configuracion.FramesLlegadaAsistencia);
+            _asistente2.Mostrar(equipo2.Asistente, configuracion.Equipo2, ColoresJugador2, configuracion.FramesLlegadaAsistencia);
         }
 
         /// <param name="reglas">Configuración del duelo entre los dos luchadores que están en pantalla.</param>
@@ -61,6 +73,8 @@ namespace FgcTag.Presentacion
         {
             _luchador1.DestruirMateriales();
             _luchador2.DestruirMateriales();
+            _asistente1.DestruirMateriales();
+            _asistente2.DestruirMateriales();
             Object.Destroy(_materialPiso);
             Object.Destroy(_raiz);
         }
@@ -81,6 +95,76 @@ namespace FgcTag.Presentacion
             material.color = ColorPiso;
 
             return material;
+        }
+
+        /// <summary>
+        /// Asistente: una caja más estrecha que la de un luchador, que aparece agachada mientras
+        /// llega y se endereza al atacar, con su caja de golpe en rojo durante los frames activos.
+        /// </summary>
+        private sealed class AsistenteVisual
+        {
+            private const float FactorAncho = 0.7f;
+            private const float FactorAlturaAlLlegar = 0.6f;
+
+            private readonly GameObject _cuerpo;
+            private readonly GameObject _cajaGolpe;
+            private readonly Material _material;
+            private readonly Material _materialCajaGolpe;
+
+            public AsistenteVisual(string nombre, Transform padre)
+            {
+                _cuerpo = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                _cuerpo.name = nombre;
+                _cuerpo.transform.SetParent(padre, false);
+                _material = _cuerpo.GetComponent<Renderer>().material;
+                _cuerpo.SetActive(false);
+
+                _cajaGolpe = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                _cajaGolpe.name = nombre + "CajaGolpe";
+                _cajaGolpe.transform.SetParent(padre, false);
+                _materialCajaGolpe = _cajaGolpe.GetComponent<Renderer>().material;
+                _materialCajaGolpe.color = ColorCajaGolpe;
+                _cajaGolpe.SetActive(false);
+            }
+
+            public void Mostrar(in EstadoAsistente asistente, in ParametrosEquipo equipo, Color[] colores, int framesLlegada)
+            {
+                _cuerpo.SetActive(asistente.EnPantalla);
+
+                if (!asistente.EnPantalla)
+                {
+                    _cajaGolpe.SetActive(false);
+                    return;
+                }
+
+                var parametros = equipo.Obtener(asistente.Miembro);
+                var frameDelAtaque = asistente.Frames - framesLlegada;
+                var ancho = parametros.MedioAnchoEmpuje.AFlotante() * 2f * FactorAncho;
+                var alto = parametros.MedioAltoEmpuje.AFlotante() * 2f * (frameDelAtaque < 0 ? FactorAlturaAlLlegar : 1f);
+
+                _material.color = colores[asistente.Miembro];
+                _cuerpo.transform.localPosition = new Vector3(asistente.Posicion.X.AFlotante(), alto / 2f, GrosorProfundidad);
+                _cuerpo.transform.localScale = new Vector3(ancho, alto, GrosorProfundidad);
+
+                var movimiento = parametros.Movimientos.Asistencia;
+                var golpeando = frameDelAtaque >= 0 && movimiento.EstaActivo(frameDelAtaque);
+                _cajaGolpe.SetActive(golpeando);
+
+                if (!golpeando)
+                {
+                    return;
+                }
+
+                var caja = SimuladorEquipos.CajaGolpeDelAsistente(asistente, movimiento);
+                _cajaGolpe.transform.localPosition = new Vector3(caja.Centro.X.AFlotante(), caja.Centro.Y.AFlotante(), -GrosorProfundidad / 2f);
+                _cajaGolpe.transform.localScale = new Vector3(caja.MedioAncho.AFlotante() * 2f, caja.MedioAlto.AFlotante() * 2f, GrosorProfundidad / 2f);
+            }
+
+            public void DestruirMateriales()
+            {
+                Object.Destroy(_material);
+                Object.Destroy(_materialCajaGolpe);
+            }
         }
 
         private sealed class LuchadorVisual

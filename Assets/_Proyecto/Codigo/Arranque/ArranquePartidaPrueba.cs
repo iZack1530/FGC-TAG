@@ -1,6 +1,7 @@
 using FgcTag.Contenido;
 using FgcTag.Entrada;
 using FgcTag.Nucleo.Combate;
+using FgcTag.Nucleo.Encuentros;
 using FgcTag.Nucleo.Equipos;
 using FgcTag.Nucleo.Simulacion;
 using FgcTag.Presentacion;
@@ -29,31 +30,38 @@ namespace FgcTag.Arranque
         [Tooltip("Muestra frame, suma de verificación y estado de cada luchador.")]
         private bool _mostrarDepuracion = true;
 
+        private ConfiguracionEncuentro _configuracionEncuentro;
         private ConfiguracionEquipos _configuracionEquipos;
-        private EstadoCombateEquipos _combate;
+        private EstadoEncuentro _encuentro;
         private VistaCajasPrueba _vista;
         private double _acumulado;
         private bool _pausado;
         private MedidorVentaja _medidor;
         private GUIStyle _estiloTexto;
         private GUIStyle _estiloAviso;
+        private GUIStyle _estiloMarcador;
         private string _ultimoAtaqueJugador1 = string.Empty;
 
         private static readonly Color ColorFondoBarra = new Color(0.12f, 0.12f, 0.14f);
+        private static readonly Color ColorVidaRecuperable = new Color(0.15f, 0.3f, 0.75f);
         private static readonly Color ColorVidaJugador1 = new Color(0.25f, 0.55f, 0.95f);
         private static readonly Color ColorVidaJugador2 = new Color(0.95f, 0.35f, 0.3f);
 
         /// <summary>El duelo entre los dos luchadores que están en pantalla.</summary>
-        private EstadoPartida Duelo => _combate.Duelo;
+        private EstadoPartida Duelo => Combate.Duelo;
+
+        /// <summary>El combate por equipos de la ronda actual.</summary>
+        private EstadoCombateEquipos Combate => _encuentro.Ronda;
 
         /// <summary>Reglas del duelo con los parámetros de los dos luchadores activos.</summary>
         private ConfiguracionCombate ReglasDuelo =>
-            _configuracionEquipos.DueloEntre(_combate.Equipo1.IndiceActivo, _combate.Equipo2.IndiceActivo);
+            _configuracionEquipos.DueloEntre(Combate.Equipo1.IndiceActivo, Combate.Equipo2.IndiceActivo);
 
         private void Awake()
         {
-            _configuracionEquipos = DatosPrueba.EquiposCajasGrises;
-            _combate = DatosPrueba.CombateInicial;
+            _configuracionEncuentro = DatosPrueba.EncuentroCajasGrises;
+            _configuracionEquipos = _configuracionEncuentro.Equipos;
+            _encuentro = DatosPrueba.EncuentroInicial;
             _vista = new VistaCajasPrueba(transform, _configuracionEquipos.Reglas);
             MostrarCombate();
             _medidor = new MedidorVentaja();
@@ -68,7 +76,7 @@ namespace FgcTag.Arranque
         {
             if (TeclasDepuracion.ReiniciarRondaPulsado())
             {
-                _combate = DatosPrueba.CombateInicial;
+                _encuentro = DatosPrueba.EncuentroInicial;
                 _medidor = new MedidorVentaja();
                 _ultimoAtaqueJugador1 = string.Empty;
                 _acumulado = 0;
@@ -109,8 +117,11 @@ namespace FgcTag.Arranque
             MostrarCombate();
         }
 
-        private void MostrarCombate() =>
-            _vista.Mostrar(Duelo, ReglasDuelo, _combate.Equipo1.IndiceActivo, _combate.Equipo2.IndiceActivo);
+        private void MostrarCombate()
+        {
+            _vista.Mostrar(Duelo, ReglasDuelo, Combate.Equipo1.IndiceActivo, Combate.Equipo2.IndiceActivo);
+            _vista.MostrarAsistentes(Combate.Equipo1, Combate.Equipo2, _configuracionEquipos);
+        }
 
         private void OnDestroy() => _vista?.Destruir();
 
@@ -118,7 +129,7 @@ namespace FgcTag.Arranque
         {
             var entradas = new EntradasFrame(LectorEntradas.LeerJugador1(), LectorEntradas.LeerJugador2());
             var anterior = Duelo;
-            _combate = SimuladorEquipos.Avanzar(_combate, entradas, _configuracionEquipos);
+            _encuentro = SimuladorEncuentro.Avanzar(_encuentro, entradas, _configuracionEncuentro);
             _medidor.Observar(anterior, Duelo);
 
             if (EstadosAccion.EstaAtacando(Duelo.Luchador1.Accion))
@@ -135,6 +146,7 @@ namespace FgcTag.Arranque
             {
                 _estiloTexto = new GUIStyle(GUI.skin.label) { fontSize = 16 };
                 _estiloAviso = new GUIStyle(GUI.skin.label) { fontSize = 34, alignment = TextAnchor.MiddleCenter };
+                _estiloMarcador = new GUIStyle(GUI.skin.label) { fontSize = 18, alignment = TextAnchor.MiddleCenter };
             }
 
             DibujarMarcador();
@@ -149,14 +161,14 @@ namespace FgcTag.Arranque
             var reglas = ReglasDuelo;
 
             GUILayout.BeginArea(new Rect(12, 12, Screen.width - 24, 255), GUI.skin.box);
-            GUILayout.Label($"Frame {Duelo.Frame}   Suma {_combate.CalcularSumaVerificacion()}   {modo}", _estiloTexto);
+            GUILayout.Label($"Frame {Duelo.Frame}   Suma {_encuentro.CalcularSumaVerificacion()}   {modo}", _estiloTexto);
             GUILayout.Label(DescribirLuchador("J1", Duelo.Luchador1), _estiloTexto);
             GUILayout.Label(DescribirLuchador("J2", Duelo.Luchador2), _estiloTexto);
-            GUILayout.Label(DescribirEquipo("Equipo J1", _combate.Equipo1, Duelo.Luchador1), _estiloTexto);
-            GUILayout.Label(DescribirEquipo("Equipo J2", _combate.Equipo2, Duelo.Luchador2), _estiloTexto);
+            GUILayout.Label(DescribirEquipo("Equipo J1", Combate.Equipo1, Duelo.Luchador1), _estiloTexto);
+            GUILayout.Label(DescribirEquipo("Equipo J2", Combate.Equipo2, Duelo.Luchador2), _estiloTexto);
             GUILayout.Label($"Último ataque de J1: {_ultimoAtaqueJugador1}", _estiloTexto);
             GUILayout.Label(_medidor.Resumen, _estiloTexto);
-            GUILayout.Label($"Daño en combo: -{reglas.Danio.ReduccionPorGolpe}% por golpe, mínimo {reglas.Danio.PorcentajeMinimo}%; bloqueado {reglas.Danio.PorcentajeAlBloquear}%   F3 combate nuevo", _estiloTexto);
+            GUILayout.Label($"Daño en combo: -{reglas.Danio.ReduccionPorGolpe}% por golpe, mínimo {reglas.Danio.PorcentajeMinimo}%; bloqueado {reglas.Danio.PorcentajeAlBloquear}%   F3 encuentro nuevo", _estiloTexto);
             GUILayout.EndArea();
         }
 
@@ -173,19 +185,28 @@ namespace FgcTag.Arranque
             var anchoBarra = (Screen.width - 2f * Margen - AnchoReloj) / 2f;
             var y = Screen.height - Margen - AltoBarra;
 
-            DibujarVidaEquipo(Margen, y, anchoBarra, AltoBarra, _combate.Equipo1, Duelo.Luchador1, _configuracionEquipos.Equipo1, ColorVidaJugador1, false);
-            DibujarVidaEquipo(Screen.width - Margen - anchoBarra, y, anchoBarra, AltoBarra, _combate.Equipo2, Duelo.Luchador2, _configuracionEquipos.Equipo2, ColorVidaJugador2, true);
+            DibujarVidaEquipo(Margen, y, anchoBarra, AltoBarra, Combate.Equipo1, Duelo.Luchador1, _configuracionEquipos.Equipo1, ColorVidaJugador1, false);
+            DibujarVidaEquipo(Screen.width - Margen - anchoBarra, y, anchoBarra, AltoBarra, Combate.Equipo2, Duelo.Luchador2, _configuracionEquipos.Equipo2, ColorVidaJugador2, true);
 
             var segundos = (Duelo.FramesRestantes + ConstantesSimulacion.FramesPorSegundoLogica - 1) / ConstantesSimulacion.FramesPorSegundoLogica;
             GUI.Label(new Rect(Margen + anchoBarra, y - 10f, AnchoReloj, AltoBarra + 20f), segundos.ToString(), _estiloAviso);
 
-            if (_combate.Terminado)
+            GUI.Label(
+                new Rect(0f, y - 62f, Screen.width, 30f),
+                $"Ronda {_encuentro.NumeroDeRonda}   rondas ganadas: J1 {_encuentro.Victorias1} - {_encuentro.Victorias2} J2   (gana quien llegue a {_configuracionEncuentro.VictoriasNecesarias})",
+                _estiloMarcador);
+
+            if (_encuentro.Terminado)
             {
-                GUI.Label(new Rect(0f, y - 110f, Screen.width, 60f), DescribirResultado(_combate.Resultado, Duelo.FramesRestantes == 0), _estiloAviso);
+                GUI.Label(new Rect(0f, y - 130f, Screen.width, 60f), DescribirFinal(_encuentro.Resultado), _estiloAviso);
             }
-            else if (_combate.EsperandoRelevo)
+            else if (_encuentro.EntreRondas)
             {
-                GUI.Label(new Rect(0f, y - 110f, Screen.width, 60f), "K.O.: entra el siguiente luchador", _estiloAviso);
+                GUI.Label(new Rect(0f, y - 130f, Screen.width, 60f), DescribirResultado(Combate.Resultado, Duelo.FramesRestantes == 0), _estiloAviso);
+            }
+            else if (Combate.EsperandoRelevo)
+            {
+                GUI.Label(new Rect(0f, y - 130f, Screen.width, 60f), "K.O.: entra el siguiente luchador", _estiloAviso);
             }
         }
 
@@ -203,7 +224,7 @@ namespace FgcTag.Arranque
             const float AltoReserva = 12f;
             const float Separacion = 4f;
 
-            DibujarBarraVida(new Rect(x, y, ancho, alto), activo.Vida, parametros.Obtener(equipo.IndiceActivo).VidaMaxima, color, pegadaALaIzquierda, true);
+            DibujarBarraVida(new Rect(x, y, ancho, alto), activo.Vida, activo.VidaRecuperable, parametros.Obtener(equipo.IndiceActivo).VidaMaxima, color, pegadaALaIzquierda, true);
 
             for (var pasos = 1; pasos < EstadoEquipo.Miembros; pasos++)
             {
@@ -215,6 +236,7 @@ namespace FgcTag.Arranque
                 DibujarBarraVida(
                     new Rect(xReserva, yReserva, anchoReserva, AltoReserva),
                     equipo.VidaEnReserva(miembro),
+                    equipo.Reserva(miembro).Recuperable,
                     parametros.Obtener(miembro).VidaMaxima,
                     color,
                     pegadaALaIzquierda,
@@ -224,27 +246,37 @@ namespace FgcTag.Arranque
 
         private static string DescribirEquipo(string etiqueta, in EstadoEquipo equipo, in EstadoLuchador activo)
         {
-            var espera = equipo.FramesEsperaCambio > 0 ? $"cambio en {equipo.FramesEsperaCambio} f" : "cambio listo";
+            var cambio = equipo.FramesEsperaCambio > 0 ? $"cambio en {equipo.FramesEsperaCambio} f" : "cambio listo";
+            var asistencia = equipo.Asistente.EnPantalla
+                ? $"asistente {equipo.Asistente.Miembro + 1} en pantalla"
+                : equipo.FramesEsperaAsistencia > 0 ? $"asistencia en {equipo.FramesEsperaAsistencia} f" : "asistencia lista";
 
-            return $"{etiqueta}: en pantalla el luchador {equipo.IndiceActivo + 1} de {EstadoEquipo.Miembros}   vidas {equipo.VidaDe(0, activo)} | {equipo.VidaDe(1, activo)} | {equipo.VidaDe(2, activo)}   {espera}";
+            return $"{etiqueta}: en pantalla el luchador {equipo.IndiceActivo + 1} de {EstadoEquipo.Miembros}   vidas {DescribirVida(equipo, 0, activo)} | {DescribirVida(equipo, 1, activo)} | {DescribirVida(equipo, 2, activo)}   {cambio}   {asistencia}";
         }
 
-        /// <summary>La vida restante queda pegada al centro de la pantalla: cada barra se vacía desde su borde exterior.</summary>
-        private static void DibujarBarraVida(Rect zona, int vida, int vidaMaxima, Color color, bool pegadaALaIzquierda, bool conNumeros)
+        private static string DescribirVida(in EstadoEquipo equipo, int miembro, in EstadoLuchador activo) =>
+            $"{equipo.VidaDe(miembro, activo)} (+{equipo.RecuperableDe(miembro, activo)})";
+
+        /// <summary>La vida recuperable se dibuja en azul oscuro a continuación de la vida, hacia el borde exterior.</summary>
+        private static void DibujarBarraVida(Rect zona, int vida, int recuperable, int vidaMaxima, Color color, bool pegadaALaIzquierda, bool conNumeros)
         {
             var colorAnterior = GUI.color;
             var anchoVida = zona.width * vida / vidaMaxima;
+            var anchoRecuperable = zona.width * recuperable / vidaMaxima;
             var xVida = pegadaALaIzquierda ? zona.x : zona.x + zona.width - anchoVida;
+            var xRecuperable = pegadaALaIzquierda ? xVida + anchoVida : xVida - anchoRecuperable;
 
             GUI.color = ColorFondoBarra;
             GUI.DrawTexture(zona, Texture2D.whiteTexture);
+            GUI.color = ColorVidaRecuperable;
+            GUI.DrawTexture(new Rect(xRecuperable, zona.y, anchoRecuperable, zona.height), Texture2D.whiteTexture);
             GUI.color = color;
             GUI.DrawTexture(new Rect(xVida, zona.y, anchoVida, zona.height), Texture2D.whiteTexture);
             GUI.color = Color.white;
 
             if (conNumeros)
             {
-                GUI.Label(new Rect(zona.x + 8f, zona.y + 2f, zona.width, zona.height), $"{vida} / {vidaMaxima}");
+                GUI.Label(new Rect(zona.x + 8f, zona.y + 2f, zona.width, zona.height), $"{vida} (+{recuperable}) / {vidaMaxima}");
             }
 
             GUI.color = colorAnterior;
@@ -257,11 +289,24 @@ namespace FgcTag.Arranque
             switch (resultado)
             {
                 case ResultadoRonda.GanaJugador1:
-                    return $"{motivo}: gana el jugador 1   (F3: combate nuevo)";
+                    return $"{motivo}: la ronda es del jugador 1";
                 case ResultadoRonda.GanaJugador2:
-                    return $"{motivo}: gana el jugador 2   (F3: combate nuevo)";
+                    return $"{motivo}: la ronda es del jugador 2";
                 default:
-                    return $"{motivo}: empate   (F3: combate nuevo)";
+                    return $"{motivo}: ronda empatada";
+            }
+        }
+
+        private static string DescribirFinal(ResultadoRonda resultado)
+        {
+            switch (resultado)
+            {
+                case ResultadoRonda.GanaJugador1:
+                    return "Encuentro para el jugador 1   (F3: encuentro nuevo)";
+                case ResultadoRonda.GanaJugador2:
+                    return "Encuentro para el jugador 2   (F3: encuentro nuevo)";
+                default:
+                    return "Encuentro empatado   (F3: encuentro nuevo)";
             }
         }
 
