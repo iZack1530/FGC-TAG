@@ -1,6 +1,5 @@
 using FgcTag.Nucleo.Colisiones;
 using FgcTag.Nucleo.Combate;
-using FgcTag.Nucleo.Encuentros;
 using FgcTag.Nucleo.Equipos;
 using FgcTag.Nucleo.Matematica;
 
@@ -197,6 +196,37 @@ namespace FgcTag.Pruebas.Nucleo
         /// <summary>Cada golpe del combo hace 10 puntos porcentuales menos, con un mínimo del 30%. Bloqueado pasa el 10%.</summary>
         public static readonly ReglasDanio Danio = new ReglasDanio(reduccionPorGolpe: 10, porcentajeMinimo: 30, porcentajeAlBloquear: 10);
 
+        /// <summary>
+        /// Agarre: activo en los frames 3 y 4, alcanza hasta 1.5 unidades y falla en 25 frames. Si
+        /// atrapa, sujeta 10 frames, hace 250 de daño y lanza al rival; quien agarra se recupera 15 frames después.
+        /// </summary>
+        public static readonly DatosAgarre Agarre = new DatosAgarre(
+            arranque: 3,
+            activos: 2,
+            recuperacion: 20,
+            cajaAgarre: new CajaColision(VectorFijo.DesdeEnteros(1, 1), Fijo.Medio, Fijo.Medio),
+            framesSujecion: 10,
+            recuperacionTrasLanzar: 15,
+            danio: 250,
+            velocidadLanzamiento: new VectorFijo(Fijo.DesdeFraccion(1, 8), Fijo.DesdeFraccion(1, 4)),
+            aturdimientoLanzado: 60);
+
+        /// <summary>Una dirección más el golpe fuerte es un agarre a 1.5 unidades o menos; 8 frames de protección tras un aturdimiento.</summary>
+        public static readonly ReglasAgarre Agarres = new ReglasAgarre(framesProteccion: 8, distanciaActivacion: Fijo.DesdeFraccion(3, 2));
+
+        /// <summary>
+        /// Barras de 100 unidades, 7 como máximo. Del daño base: 5 % al ejecutar, 20 % más al
+        /// conectar o 10 % si es bloqueado; quien recibe gana 15 % y quien bloquea, 5 %.
+        /// </summary>
+        public static readonly ReglasBarra Barra = new ReglasBarra(
+            unidadesPorBarra: 100,
+            barrasMaximas: 7,
+            porcentajeAlEjecutar: 5,
+            porcentajeAlConectar: 20,
+            porcentajeAlSerBloqueado: 10,
+            porcentajeAlRecibir: 15,
+            porcentajeAlBloquear: 5);
+
         /// <summary>99 segundos.</summary>
         public const int FramesPorRonda = 5940;
 
@@ -236,7 +266,8 @@ namespace FgcTag.Pruebas.Nucleo
                 debilAereo: GolpeDebilAereo,
                 medioAereo: GolpeMedioAereo,
                 fuerteAereo: GolpeFuerteAereo,
-                asistencia: GolpeMedio));
+                asistencia: GolpeMedio,
+                agarre: Agarre));
 
         /// <summary>
         /// La mitad del daño de un golpe queda como vida recuperable y cada golpe nuevo destruye
@@ -262,11 +293,21 @@ namespace FgcTag.Pruebas.Nucleo
             danio: Danio,
             juggle: Juggle,
             vidaRecuperable: Recuperable,
-            framesPorRonda: framesPorRonda,
-            framesEntrada: FramesEntrada);
+            barra: Barra,
+            agarres: Agarres,
+            framesPorRonda: framesPorRonda);
 
-        /// <summary>Frames que tarda en poder actuar quien entra a la pantalla.</summary>
-        public const int FramesEntrada = 10;
+        /// <summary>
+        /// Quien entra salta 8 frames desde 2 unidades detrás y 2 de altura. El primer paso del
+        /// salto ocurre en el mismo frame del cambio, así que aterriza 7 frames después.
+        /// </summary>
+        public const int FramesEntrada = 8;
+
+        /// <summary>Frames que hay que simular tras el frame del cambio para que quien entra ya tenga control: el resto del salto y 3 de aterrizaje.</summary>
+        public const int FramesHastaActuarTrasEntrar = FramesEntrada + 2;
+
+        /// <summary>El que sale se ve 10 frames alejándose 1/4 de unidad por frame hacia atrás y hacia arriba.</summary>
+        public const int FramesSalida = 10;
 
         public const int FramesEsperaCambio = 60;
         public const int FramesPausaNocaut = 30;
@@ -299,31 +340,11 @@ namespace FgcTag.Pruebas.Nucleo
             distanciaEntrada: Fijo.DesdeEntero(4),
             framesMantenerParaCambiar: FramesMantenerParaCambiar,
             framesLlegadaAsistencia: FramesLlegadaAsistencia,
-            framesEsperaAsistencia: FramesEsperaAsistencia);
-
-        public const int FramesEntreRondas = 20;
-
-        /// <summary>Encuentro al mejor de 3 (2 victorias), con los luchadores pegados al empezar cada ronda.</summary>
-        public static readonly ConfiguracionEncuentro Encuentro = EncuentroConReloj(FramesPorRonda);
-
-        public static ConfiguracionEncuentro EncuentroConReloj(int framesPorRonda) => new ConfiguracionEncuentro(
-            EquiposConReloj(framesPorRonda),
-            victoriasNecesarias: 2,
-            framesEntreRondas: FramesEntreRondas,
-            posicionInicial1: VectorFijo.DesdeEnteros(0, 0),
-            posicionInicial2: VectorFijo.DesdeEnteros(1, 0));
-
-        public static EstadoEncuentro SimularEncuentro(EstadoEncuentro estado, BotonesEntrada jugador1, BotonesEntrada jugador2, int frames)
-        {
-            var entradas = new EntradasFrame(jugador1, jugador2);
-
-            for (var i = 0; i < frames; i++)
-            {
-                estado = SimuladorEncuentro.Avanzar(estado, entradas, Encuentro);
-            }
-
-            return estado;
-        }
+            framesEsperaAsistencia: FramesEsperaAsistencia,
+            framesEntrada: FramesEntrada,
+            desplazamientoEntrada: VectorFijo.DesdeEnteros(2, 2),
+            framesSalida: FramesSalida,
+            velocidadSalida: new VectorFijo(Fijo.DesdeFraccion(1, 4), Fijo.DesdeFraccion(1, 4)));
 
         public static EstadoCombateEquipos InicialPorEquipos(int x1, int x2) =>
             EstadoCombateEquipos.Crear(VectorFijo.DesdeEnteros(x1, 0), VectorFijo.DesdeEnteros(x2, 0), Equipos);

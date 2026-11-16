@@ -23,6 +23,9 @@ namespace FgcTag.Nucleo.Combate
         /// <summary>Ataque que este luchador hace cuando un compañero lo llama como asistente.</summary>
         public readonly DatosMovimiento Asistencia;
 
+        /// <summary>Agarre normal: una dirección más el golpe fuerte, cerca del rival.</summary>
+        public readonly DatosAgarre Agarre;
+
         public MovimientosLuchador(
             DatosMovimiento debil,
             DatosMovimiento medio,
@@ -34,7 +37,8 @@ namespace FgcTag.Nucleo.Combate
             DatosMovimiento debilAereo,
             DatosMovimiento medioAereo,
             DatosMovimiento fuerteAereo,
-            DatosMovimiento asistencia)
+            DatosMovimiento asistencia,
+            DatosAgarre agarre)
         {
             Debil = debil;
             Medio = medio;
@@ -47,6 +51,7 @@ namespace FgcTag.Nucleo.Combate
             MedioAereo = medioAereo;
             FuerteAereo = fuerteAereo;
             Asistencia = asistencia;
+            Agarre = agarre;
         }
 
         /// <summary>En el aire solo existen Débil, Medio y Fuerte; el botón Especial no tiene ataque aéreo.</summary>

@@ -37,6 +37,18 @@ namespace FgcTag.Nucleo.Equipos
         /// <summary>Frames que un equipo espera tras llamar a una asistencia antes de poder llamar a otra.</summary>
         public readonly int FramesEsperaAsistencia;
 
+        /// <summary>Frames que dura el salto con el que un luchador entra en pantalla.</summary>
+        public readonly int FramesEntrada;
+
+        /// <summary>Dónde empieza el salto de entrada respecto a su destino: X hacia atrás e Y de altura.</summary>
+        public readonly VectorFijo DesplazamientoEntrada;
+
+        /// <summary>Frames durante los que se ve salir al luchador que deja la pantalla.</summary>
+        public readonly int FramesSalida;
+
+        /// <summary>Velocidad por frame del salto de salida: X hacia atrás e Y hacia arriba.</summary>
+        public readonly VectorFijo VelocidadSalida;
+
         public ConfiguracionEquipos(
             ParametrosEquipo equipo1,
             ParametrosEquipo equipo2,
@@ -46,8 +58,22 @@ namespace FgcTag.Nucleo.Equipos
             Fijo distanciaEntrada,
             int framesMantenerParaCambiar,
             int framesLlegadaAsistencia,
-            int framesEsperaAsistencia)
+            int framesEsperaAsistencia,
+            int framesEntrada,
+            VectorFijo desplazamientoEntrada,
+            int framesSalida,
+            VectorFijo velocidadSalida)
         {
+            if (framesEntrada < 1 || framesSalida < 1)
+            {
+                throw new ArgumentOutOfRangeException(nameof(framesEntrada), "Los saltos de entrada y de salida duran al menos 1 frame.");
+            }
+
+            if (desplazamientoEntrada.X < Fijo.Cero || desplazamientoEntrada.Y <= Fijo.Cero)
+            {
+                throw new ArgumentOutOfRangeException(nameof(desplazamientoEntrada), "Quien entra empieza detrás de su destino y por encima del suelo.");
+            }
+
             if (framesMantenerParaCambiar < 2)
             {
                 throw new ArgumentOutOfRangeException(nameof(framesMantenerParaCambiar), "Hay que mantener el botón al menos 2 frames para distinguirlo de una pulsación.");
@@ -77,6 +103,10 @@ namespace FgcTag.Nucleo.Equipos
             FramesMantenerParaCambiar = framesMantenerParaCambiar;
             FramesLlegadaAsistencia = framesLlegadaAsistencia;
             FramesEsperaAsistencia = framesEsperaAsistencia;
+            FramesEntrada = framesEntrada;
+            DesplazamientoEntrada = desplazamientoEntrada;
+            FramesSalida = framesSalida;
+            VelocidadSalida = velocidadSalida;
         }
 
         /// <summary>Configuración del duelo entre los luchadores que cada equipo tiene en pantalla.</summary>

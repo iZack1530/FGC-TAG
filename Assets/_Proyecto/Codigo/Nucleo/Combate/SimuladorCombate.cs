@@ -9,7 +9,7 @@ namespace FgcTag.Nucleo.Combate
     /// <remarks>
     /// Orden de cada frame: 1) cada luchador actúa según su acción y sus entradas;
     /// 2) se aplican las paredes; 3) se separan las cajas de empuje; 4) se resuelven los golpes
-    /// (caja de golpe contra caja de daño); 5) los luchadores que pueden girar se orientan hacia
+    /// (caja de golpe contra caja de daño) y después los agarres; 5) los luchadores que pueden girar se orientan hacia
     /// el rival. Un luchador en hitstop no actúa: solo descuenta un frame de congelamiento.
     /// Antes de actuar, cada ataque recién pulsado se guarda en el búfer de entradas.
     /// Al final se descuenta el reloj y se decide la ronda: por K.O. o por tiempo. Con la ronda
@@ -23,12 +23,12 @@ namespace FgcTag.Nucleo.Combate
             var entradas = estado.RondaTerminada ? EntradasFrame.Vacias : entradasRecibidas;
 
             var luchador1 = LimitarAlEscenario(
-                AvanzarLuchador(estado.Luchador1, entradas.Jugador1, configuracion.Jugador1, configuracion),
+                AvanzarLuchador(estado.Luchador1, entradas.Jugador1, estado.Luchador2, configuracion.Jugador1, configuracion),
                 configuracion.Jugador1,
                 configuracion);
 
             var luchador2 = LimitarAlEscenario(
-                AvanzarLuchador(estado.Luchador2, entradas.Jugador2, configuracion.Jugador2, configuracion),
+                AvanzarLuchador(estado.Luchador2, entradas.Jugador2, estado.Luchador1, configuracion.Jugador2, configuracion),
                 configuracion.Jugador2,
                 configuracion);
 
@@ -36,7 +36,10 @@ namespace FgcTag.Nucleo.Combate
             var (golpeado1, golpeado2) = estado.RondaTerminada
                 ? (empujado1, empujado2)
                 : ResolucionGolpes.Resolver(empujado1, empujado2, entradas, configuracion);
-            var (orientado1, orientado2) = Orientar(golpeado1, golpeado2);
+            var (agarrado1, agarrado2) = estado.RondaTerminada
+                ? (golpeado1, golpeado2)
+                : ResolucionAgarres.Resolver(golpeado1, golpeado2, configuracion);
+            var (orientado1, orientado2) = Orientar(agarrado1, agarrado2);
 
             if (estado.RondaTerminada)
             {
@@ -112,6 +115,7 @@ namespace FgcTag.Nucleo.Combate
         private static EstadoLuchador AvanzarLuchador(
             in EstadoLuchador luchador,
             BotonesEntrada botones,
+            in EstadoLuchador rival,
             in ParametrosLuchador parametros,
             in ConfiguracionCombate configuracion)
         {
@@ -119,9 +123,64 @@ namespace FgcTag.Nucleo.Combate
 
             var avanzado = conBufer.EnHitstop
                 ? conBufer.ConHitstop(conBufer.FramesHitstop - 1)
-                : ContarFramesDesdeAgachado(Actuar(conBufer, botones, parametros, configuracion));
+                : ContarFramesDesdeAgachado(AlEmpezarUnAtaque(Actuar(conBufer, botones, parametros, configuracion), luchador, botones, rival, parametros, configuracion));
 
-            return avanzado.ConBotonesAnteriores(botones);
+            return ContarProteccionDeAgarre(avanzado, configuracion.Agarres).ConBotonesAnteriores(botones);
+        }
+
+        /// <summary>
+        /// En el frame en que empieza un ataque: una dirección más el golpe fuerte, cerca de un
+        /// rival en tierra, se convierte en agarre; y ejecutar cualquier ataque da un poco de barra.
+        /// </summary>
+        private static EstadoLuchador AlEmpezarUnAtaque(
+            in EstadoLuchador luchador,
+            in EstadoLuchador antes,
+            BotonesEntrada botones,
+            in EstadoLuchador rival,
+            in ParametrosLuchador parametros,
+            in ConfiguracionCombate configuracion)
+        {
+            if (!EstadosAccion.EstaAtacando(luchador.Accion) || luchador.FramesEnAccion != 0)
+            {
+                return luchador;
+            }
+
+            var esCancelacion = EstadosAccion.EstaAtacando(antes.Accion) &&
+                antes.FramesEnAccion + 1 < parametros.MovimientoEnCurso(antes).DuracionTotal;
+
+            if (esCancelacion || !EsAgarre(luchador, antes, botones, rival, configuracion.Agarres))
+            {
+                return luchador.ConBarra(configuracion.Barra.AlEjecutar(luchador.Barra, parametros.MovimientoEnCurso(luchador).Danio));
+            }
+
+            var haciaAtras = InterpretacionEntradas.DireccionHorizontal(botones) != luchador.SentidoAdelante;
+
+            return SinAtaque(luchador)
+                .ConAccionNueva(AccionLuchador.IntentandoAgarre)
+                .ConAgarreHaciaAtras(haciaAtras)
+                .ConBarra(configuracion.Barra.AlEjecutar(luchador.Barra, parametros.Movimientos.Agarre.Danio));
+        }
+
+        /// <summary>
+        /// El golpe fuerte de pie es un agarre si se pulsa manteniendo adelante o atrás, con el
+        /// rival en tierra y a la distancia de activación. Cancelar otro ataque nunca da un agarre.
+        /// </summary>
+        private static bool EsAgarre(in EstadoLuchador luchador, in EstadoLuchador antes, BotonesEntrada botones, in EstadoLuchador rival, in ReglasAgarre reglas) =>
+            luchador.Accion == AccionLuchador.Atacando &&
+            luchador.Ataque == TipoAtaque.Fuerte &&
+            InterpretacionEntradas.DireccionHorizontal(botones) != 0 &&
+            !EstadosAccion.EstaEnElAire(rival.Accion) &&
+            Fijo.Abs(rival.Posicion.X - antes.Posicion.X) <= reglas.DistanciaActivacion;
+
+        /// <summary>Mientras dura un aturdimiento la protección contra agarres está completa; después se descuenta.</summary>
+        private static EstadoLuchador ContarProteccionDeAgarre(in EstadoLuchador luchador, in ReglasAgarre reglas)
+        {
+            if (EstadosAccion.ProtegeDeAgarres(luchador.Accion))
+            {
+                return luchador.ConProteccionAgarre(reglas.FramesProteccion);
+            }
+
+            return luchador.FramesProteccionAgarre > 0 ? luchador.ConProteccionAgarre(luchador.FramesProteccionAgarre - 1) : luchador;
         }
 
         private static EstadoLuchador ContarFramesDesdeAgachado(in EstadoLuchador luchador)
@@ -299,9 +358,20 @@ namespace FgcTag.Nucleo.Combate
                         : luchador.ConAccion(AccionLuchador.PreSalto);
 
                 case AccionLuchador.Entrando:
-                    return luchador.FramesEnAccion + 1 >= configuracion.FramesEntrada
+                    return MoverEnAire(luchador.ConAccion(AccionLuchador.Entrando), parametros.Salto.Gravedad, parametros.Salto.FramesAterrizaje);
+
+                case AccionLuchador.IntentandoAgarre:
+                    return luchador.FramesEnAccion + 1 >= parametros.AgarreEnCurso(luchador).DuracionAlFallar
                         ? ControlarEnTierra(luchador, botones, parametros)
-                        : luchador.ConAccion(AccionLuchador.Entrando);
+                        : luchador.ConAccion(AccionLuchador.IntentandoAgarre);
+
+                case AccionLuchador.Agarrando:
+                    return luchador.FramesEnAccion + 1 >= parametros.AgarreEnCurso(luchador).DuracionAlAgarrar
+                        ? ControlarEnTierra(luchador, botones, parametros)
+                        : luchador.ConAccion(AccionLuchador.Agarrando);
+
+                case AccionLuchador.Agarrado:
+                    return luchador.ConAccion(AccionLuchador.Agarrado);
 
                 case AccionLuchador.Aterrizaje:
                     return luchador.FramesEnAccion + 1 >= parametros.Salto.FramesAterrizaje
