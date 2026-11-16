@@ -6,7 +6,7 @@ namespace FgcTag.Pruebas.Nucleo
 {
     /// <summary>
     /// Con el escenario de prueba: barras de 100 unidades y 7 como máximo. Del daño base del
-    /// movimiento: 5 % al ejecutarlo, 20 % más si conecta o 10 % más si lo bloquean; quien lo
+    /// movimiento: 5 % al ejecutarlo (en su primer frame activo), 20 % más si conecta o 10 % más si lo bloquean; quien lo
     /// recibe gana 15 % y quien lo bloquea, 5 %. El golpe débil hace 100 de daño; el medio, 200.
     /// </summary>
     public class PruebasBarra
@@ -46,7 +46,11 @@ namespace FgcTag.Pruebas.Nucleo
         [Test]
         public void UnAtaqueAlAireDaUnPocoDeBarraUnaSolaVez()
         {
-            var estado = GolpeDebilHasta(Inicial(0, 5), BotonesEntrada.Ninguno, 1);
+            var estado = GolpeDebilHasta(Inicial(0, 5), BotonesEntrada.Ninguno, FrameDeImpacto - 1);
+
+            Assert.AreEqual(0, estado.Luchador1.Barra, "La barra llega con el primer frame activo");
+
+            estado = Simular(estado, BotonesEntrada.Ninguno, BotonesEntrada.Ninguno, 1);
 
             Assert.AreEqual(5, estado.Luchador1.Barra);
 
@@ -78,10 +82,13 @@ namespace FgcTag.Pruebas.Nucleo
         public void UnAgarreDaBarraAlIntentarloYAlLanzar()
         {
             var agarre = BotonesEntrada.Derecha | BotonesEntrada.Fuerte;
-            var estado = Simular(Inicial(0, 1), agarre, BotonesEntrada.Ninguno, 1);
+            var estado = Simular(Inicial(0, 5), agarre, BotonesEntrada.Ninguno, 1);
+            estado = Simular(Inicial(0, 1), agarre, BotonesEntrada.Arriba, 1);
+            estado = Simular(estado, BotonesEntrada.Ninguno, BotonesEntrada.Ninguno, 3);
 
-            Assert.AreEqual(12, estado.Luchador1.Barra);
+            Assert.AreEqual(12, estado.Luchador1.Barra, "Un agarre fallado da barra en su primer frame activo");
 
+            estado = Simular(Inicial(0, 1), agarre, BotonesEntrada.Ninguno, 1);
             estado = Simular(estado, BotonesEntrada.Ninguno, BotonesEntrada.Ninguno, 13);
 
             Assert.AreEqual(62, estado.Luchador1.Barra);

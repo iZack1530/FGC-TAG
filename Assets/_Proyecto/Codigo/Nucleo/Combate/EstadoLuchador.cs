@@ -71,6 +71,9 @@ namespace FgcTag.Nucleo.Combate
         /// <summary>El agarre en curso se hizo manteniendo atrás: al conectar, intercambia las posiciones.</summary>
         public readonly bool AgarraHaciaAtras;
 
+        /// <summary>Ya gastó el dash aéreo de este salto; lo recupera al aterrizar.</summary>
+        public readonly bool DashAereoUsado;
+
         public const int MaximoFramesDesdeAgachado = 255;
 
         public EstadoLuchador(
@@ -95,7 +98,8 @@ namespace FgcTag.Nucleo.Combate
             int framesSinRecibirGolpe,
             int barra,
             int framesProteccionAgarre,
-            bool agarraHaciaAtras)
+            bool agarraHaciaAtras,
+            bool dashAereoUsado)
         {
             Posicion = posicion;
             Velocidad = velocidad;
@@ -119,6 +123,7 @@ namespace FgcTag.Nucleo.Combate
             Barra = barra;
             FramesProteccionAgarre = framesProteccionAgarre;
             AgarraHaciaAtras = agarraHaciaAtras;
+            DashAereoUsado = dashAereoUsado;
         }
 
         /// <summary>Luchador quieto en el suelo, sin velocidad y con la vida indicada.</summary>
@@ -145,6 +150,7 @@ namespace FgcTag.Nucleo.Combate
                 0,
                 0,
                 0,
+                false,
                 false);
 
         /// <summary>1 si mira a la derecha, -1 si mira a la izquierda.</summary>
@@ -157,73 +163,76 @@ namespace FgcTag.Nucleo.Combate
         public bool TieneAtaqueEnBufer => AtaqueEnBufer != TipoAtaque.Ninguno && FramesBufer > 0;
 
         public EstadoLuchador ConPosicion(VectorFijo posicion) =>
-            new EstadoLuchador(posicion, Velocidad, MiraDerecha, Accion, FramesEnAccion, FramesHitstop, FramesAturdimiento, GolpeConectado, BotonesAnteriores, Ataque, AtaqueEnBufer, FramesBufer, GolpesEnCombo, Vida, GolpeBloqueado, FramesDesdeAgachado, Supersalto, VidaRecuperable, FramesSinRecibirGolpe, Barra, FramesProteccionAgarre, AgarraHaciaAtras);
+            new EstadoLuchador(posicion, Velocidad, MiraDerecha, Accion, FramesEnAccion, FramesHitstop, FramesAturdimiento, GolpeConectado, BotonesAnteriores, Ataque, AtaqueEnBufer, FramesBufer, GolpesEnCombo, Vida, GolpeBloqueado, FramesDesdeAgachado, Supersalto, VidaRecuperable, FramesSinRecibirGolpe, Barra, FramesProteccionAgarre, AgarraHaciaAtras, DashAereoUsado);
 
         public EstadoLuchador ConX(Fijo x) => ConPosicion(Posicion.ConX(x));
 
         public EstadoLuchador ConVelocidad(VectorFijo velocidad) =>
-            new EstadoLuchador(Posicion, velocidad, MiraDerecha, Accion, FramesEnAccion, FramesHitstop, FramesAturdimiento, GolpeConectado, BotonesAnteriores, Ataque, AtaqueEnBufer, FramesBufer, GolpesEnCombo, Vida, GolpeBloqueado, FramesDesdeAgachado, Supersalto, VidaRecuperable, FramesSinRecibirGolpe, Barra, FramesProteccionAgarre, AgarraHaciaAtras);
+            new EstadoLuchador(Posicion, velocidad, MiraDerecha, Accion, FramesEnAccion, FramesHitstop, FramesAturdimiento, GolpeConectado, BotonesAnteriores, Ataque, AtaqueEnBufer, FramesBufer, GolpesEnCombo, Vida, GolpeBloqueado, FramesDesdeAgachado, Supersalto, VidaRecuperable, FramesSinRecibirGolpe, Barra, FramesProteccionAgarre, AgarraHaciaAtras, DashAereoUsado);
 
         public EstadoLuchador ConOrientacion(bool miraDerecha) =>
-            new EstadoLuchador(Posicion, Velocidad, miraDerecha, Accion, FramesEnAccion, FramesHitstop, FramesAturdimiento, GolpeConectado, BotonesAnteriores, Ataque, AtaqueEnBufer, FramesBufer, GolpesEnCombo, Vida, GolpeBloqueado, FramesDesdeAgachado, Supersalto, VidaRecuperable, FramesSinRecibirGolpe, Barra, FramesProteccionAgarre, AgarraHaciaAtras);
+            new EstadoLuchador(Posicion, Velocidad, miraDerecha, Accion, FramesEnAccion, FramesHitstop, FramesAturdimiento, GolpeConectado, BotonesAnteriores, Ataque, AtaqueEnBufer, FramesBufer, GolpesEnCombo, Vida, GolpeBloqueado, FramesDesdeAgachado, Supersalto, VidaRecuperable, FramesSinRecibirGolpe, Barra, FramesProteccionAgarre, AgarraHaciaAtras, DashAereoUsado);
 
         /// <summary>Cambia de acción reiniciando el contador, o lo avanza si la acción se mantiene.</summary>
         public EstadoLuchador ConAccion(AccionLuchador accion) =>
-            new EstadoLuchador(Posicion, Velocidad, MiraDerecha, accion, accion == Accion ? FramesEnAccion + 1 : 0, FramesHitstop, FramesAturdimiento, GolpeConectado, BotonesAnteriores, Ataque, AtaqueEnBufer, FramesBufer, GolpesEnCombo, Vida, GolpeBloqueado, FramesDesdeAgachado, Supersalto, VidaRecuperable, FramesSinRecibirGolpe, Barra, FramesProteccionAgarre, AgarraHaciaAtras);
+            new EstadoLuchador(Posicion, Velocidad, MiraDerecha, accion, accion == Accion ? FramesEnAccion + 1 : 0, FramesHitstop, FramesAturdimiento, GolpeConectado, BotonesAnteriores, Ataque, AtaqueEnBufer, FramesBufer, GolpesEnCombo, Vida, GolpeBloqueado, FramesDesdeAgachado, Supersalto, VidaRecuperable, FramesSinRecibirGolpe, Barra, FramesProteccionAgarre, AgarraHaciaAtras, DashAereoUsado);
 
         /// <summary>Empieza una acción desde su primer frame aunque sea la misma que la actual.</summary>
         public EstadoLuchador ConAccionNueva(AccionLuchador accion) =>
-            new EstadoLuchador(Posicion, Velocidad, MiraDerecha, accion, 0, FramesHitstop, FramesAturdimiento, GolpeConectado, BotonesAnteriores, Ataque, AtaqueEnBufer, FramesBufer, GolpesEnCombo, Vida, GolpeBloqueado, FramesDesdeAgachado, Supersalto, VidaRecuperable, FramesSinRecibirGolpe, Barra, FramesProteccionAgarre, AgarraHaciaAtras);
+            new EstadoLuchador(Posicion, Velocidad, MiraDerecha, accion, 0, FramesHitstop, FramesAturdimiento, GolpeConectado, BotonesAnteriores, Ataque, AtaqueEnBufer, FramesBufer, GolpesEnCombo, Vida, GolpeBloqueado, FramesDesdeAgachado, Supersalto, VidaRecuperable, FramesSinRecibirGolpe, Barra, FramesProteccionAgarre, AgarraHaciaAtras, DashAereoUsado);
 
         public EstadoLuchador ConHitstop(int frames) =>
-            new EstadoLuchador(Posicion, Velocidad, MiraDerecha, Accion, FramesEnAccion, frames, FramesAturdimiento, GolpeConectado, BotonesAnteriores, Ataque, AtaqueEnBufer, FramesBufer, GolpesEnCombo, Vida, GolpeBloqueado, FramesDesdeAgachado, Supersalto, VidaRecuperable, FramesSinRecibirGolpe, Barra, FramesProteccionAgarre, AgarraHaciaAtras);
+            new EstadoLuchador(Posicion, Velocidad, MiraDerecha, Accion, FramesEnAccion, frames, FramesAturdimiento, GolpeConectado, BotonesAnteriores, Ataque, AtaqueEnBufer, FramesBufer, GolpesEnCombo, Vida, GolpeBloqueado, FramesDesdeAgachado, Supersalto, VidaRecuperable, FramesSinRecibirGolpe, Barra, FramesProteccionAgarre, AgarraHaciaAtras, DashAereoUsado);
 
         public EstadoLuchador ConAturdimiento(int frames) =>
-            new EstadoLuchador(Posicion, Velocidad, MiraDerecha, Accion, FramesEnAccion, FramesHitstop, frames, GolpeConectado, BotonesAnteriores, Ataque, AtaqueEnBufer, FramesBufer, GolpesEnCombo, Vida, GolpeBloqueado, FramesDesdeAgachado, Supersalto, VidaRecuperable, FramesSinRecibirGolpe, Barra, FramesProteccionAgarre, AgarraHaciaAtras);
+            new EstadoLuchador(Posicion, Velocidad, MiraDerecha, Accion, FramesEnAccion, FramesHitstop, frames, GolpeConectado, BotonesAnteriores, Ataque, AtaqueEnBufer, FramesBufer, GolpesEnCombo, Vida, GolpeBloqueado, FramesDesdeAgachado, Supersalto, VidaRecuperable, FramesSinRecibirGolpe, Barra, FramesProteccionAgarre, AgarraHaciaAtras, DashAereoUsado);
 
         /// <summary>Marca si el ataque en curso conectó; el contacto se considera no bloqueado.</summary>
         public EstadoLuchador ConGolpeConectado(bool golpeConectado) =>
-            new EstadoLuchador(Posicion, Velocidad, MiraDerecha, Accion, FramesEnAccion, FramesHitstop, FramesAturdimiento, golpeConectado, BotonesAnteriores, Ataque, AtaqueEnBufer, FramesBufer, GolpesEnCombo, Vida, false, FramesDesdeAgachado, Supersalto, VidaRecuperable, FramesSinRecibirGolpe, Barra, FramesProteccionAgarre, AgarraHaciaAtras);
+            new EstadoLuchador(Posicion, Velocidad, MiraDerecha, Accion, FramesEnAccion, FramesHitstop, FramesAturdimiento, golpeConectado, BotonesAnteriores, Ataque, AtaqueEnBufer, FramesBufer, GolpesEnCombo, Vida, false, FramesDesdeAgachado, Supersalto, VidaRecuperable, FramesSinRecibirGolpe, Barra, FramesProteccionAgarre, AgarraHaciaAtras, DashAereoUsado);
 
         /// <summary>El ataque en curso conectó y el rival lo bloqueó.</summary>
         public EstadoLuchador ConGolpeBloqueado() =>
-            new EstadoLuchador(Posicion, Velocidad, MiraDerecha, Accion, FramesEnAccion, FramesHitstop, FramesAturdimiento, true, BotonesAnteriores, Ataque, AtaqueEnBufer, FramesBufer, GolpesEnCombo, Vida, true, FramesDesdeAgachado, Supersalto, VidaRecuperable, FramesSinRecibirGolpe, Barra, FramesProteccionAgarre, AgarraHaciaAtras);
+            new EstadoLuchador(Posicion, Velocidad, MiraDerecha, Accion, FramesEnAccion, FramesHitstop, FramesAturdimiento, true, BotonesAnteriores, Ataque, AtaqueEnBufer, FramesBufer, GolpesEnCombo, Vida, true, FramesDesdeAgachado, Supersalto, VidaRecuperable, FramesSinRecibirGolpe, Barra, FramesProteccionAgarre, AgarraHaciaAtras, DashAereoUsado);
 
         public EstadoLuchador ConBotonesAnteriores(BotonesEntrada botones) =>
-            new EstadoLuchador(Posicion, Velocidad, MiraDerecha, Accion, FramesEnAccion, FramesHitstop, FramesAturdimiento, GolpeConectado, botones, Ataque, AtaqueEnBufer, FramesBufer, GolpesEnCombo, Vida, GolpeBloqueado, FramesDesdeAgachado, Supersalto, VidaRecuperable, FramesSinRecibirGolpe, Barra, FramesProteccionAgarre, AgarraHaciaAtras);
+            new EstadoLuchador(Posicion, Velocidad, MiraDerecha, Accion, FramesEnAccion, FramesHitstop, FramesAturdimiento, GolpeConectado, botones, Ataque, AtaqueEnBufer, FramesBufer, GolpesEnCombo, Vida, GolpeBloqueado, FramesDesdeAgachado, Supersalto, VidaRecuperable, FramesSinRecibirGolpe, Barra, FramesProteccionAgarre, AgarraHaciaAtras, DashAereoUsado);
 
         public EstadoLuchador ConAtaque(TipoAtaque ataque) =>
-            new EstadoLuchador(Posicion, Velocidad, MiraDerecha, Accion, FramesEnAccion, FramesHitstop, FramesAturdimiento, GolpeConectado, BotonesAnteriores, ataque, AtaqueEnBufer, FramesBufer, GolpesEnCombo, Vida, GolpeBloqueado, FramesDesdeAgachado, Supersalto, VidaRecuperable, FramesSinRecibirGolpe, Barra, FramesProteccionAgarre, AgarraHaciaAtras);
+            new EstadoLuchador(Posicion, Velocidad, MiraDerecha, Accion, FramesEnAccion, FramesHitstop, FramesAturdimiento, GolpeConectado, BotonesAnteriores, ataque, AtaqueEnBufer, FramesBufer, GolpesEnCombo, Vida, GolpeBloqueado, FramesDesdeAgachado, Supersalto, VidaRecuperable, FramesSinRecibirGolpe, Barra, FramesProteccionAgarre, AgarraHaciaAtras, DashAereoUsado);
 
         public EstadoLuchador ConBufer(TipoAtaque ataque, int frames) =>
-            new EstadoLuchador(Posicion, Velocidad, MiraDerecha, Accion, FramesEnAccion, FramesHitstop, FramesAturdimiento, GolpeConectado, BotonesAnteriores, Ataque, ataque, frames, GolpesEnCombo, Vida, GolpeBloqueado, FramesDesdeAgachado, Supersalto, VidaRecuperable, FramesSinRecibirGolpe, Barra, FramesProteccionAgarre, AgarraHaciaAtras);
+            new EstadoLuchador(Posicion, Velocidad, MiraDerecha, Accion, FramesEnAccion, FramesHitstop, FramesAturdimiento, GolpeConectado, BotonesAnteriores, Ataque, ataque, frames, GolpesEnCombo, Vida, GolpeBloqueado, FramesDesdeAgachado, Supersalto, VidaRecuperable, FramesSinRecibirGolpe, Barra, FramesProteccionAgarre, AgarraHaciaAtras, DashAereoUsado);
 
         public EstadoLuchador ConGolpesEnCombo(int golpes) =>
-            new EstadoLuchador(Posicion, Velocidad, MiraDerecha, Accion, FramesEnAccion, FramesHitstop, FramesAturdimiento, GolpeConectado, BotonesAnteriores, Ataque, AtaqueEnBufer, FramesBufer, golpes, Vida, GolpeBloqueado, FramesDesdeAgachado, Supersalto, VidaRecuperable, FramesSinRecibirGolpe, Barra, FramesProteccionAgarre, AgarraHaciaAtras);
+            new EstadoLuchador(Posicion, Velocidad, MiraDerecha, Accion, FramesEnAccion, FramesHitstop, FramesAturdimiento, GolpeConectado, BotonesAnteriores, Ataque, AtaqueEnBufer, FramesBufer, golpes, Vida, GolpeBloqueado, FramesDesdeAgachado, Supersalto, VidaRecuperable, FramesSinRecibirGolpe, Barra, FramesProteccionAgarre, AgarraHaciaAtras, DashAereoUsado);
 
         public EstadoLuchador ConVida(int vida) =>
-            new EstadoLuchador(Posicion, Velocidad, MiraDerecha, Accion, FramesEnAccion, FramesHitstop, FramesAturdimiento, GolpeConectado, BotonesAnteriores, Ataque, AtaqueEnBufer, FramesBufer, GolpesEnCombo, vida, GolpeBloqueado, FramesDesdeAgachado, Supersalto, VidaRecuperable, FramesSinRecibirGolpe, Barra, FramesProteccionAgarre, AgarraHaciaAtras);
+            new EstadoLuchador(Posicion, Velocidad, MiraDerecha, Accion, FramesEnAccion, FramesHitstop, FramesAturdimiento, GolpeConectado, BotonesAnteriores, Ataque, AtaqueEnBufer, FramesBufer, GolpesEnCombo, vida, GolpeBloqueado, FramesDesdeAgachado, Supersalto, VidaRecuperable, FramesSinRecibirGolpe, Barra, FramesProteccionAgarre, AgarraHaciaAtras, DashAereoUsado);
 
         public EstadoLuchador ConFramesDesdeAgachado(int frames) =>
-            new EstadoLuchador(Posicion, Velocidad, MiraDerecha, Accion, FramesEnAccion, FramesHitstop, FramesAturdimiento, GolpeConectado, BotonesAnteriores, Ataque, AtaqueEnBufer, FramesBufer, GolpesEnCombo, Vida, GolpeBloqueado, frames, Supersalto, VidaRecuperable, FramesSinRecibirGolpe, Barra, FramesProteccionAgarre, AgarraHaciaAtras);
+            new EstadoLuchador(Posicion, Velocidad, MiraDerecha, Accion, FramesEnAccion, FramesHitstop, FramesAturdimiento, GolpeConectado, BotonesAnteriores, Ataque, AtaqueEnBufer, FramesBufer, GolpesEnCombo, Vida, GolpeBloqueado, frames, Supersalto, VidaRecuperable, FramesSinRecibirGolpe, Barra, FramesProteccionAgarre, AgarraHaciaAtras, DashAereoUsado);
 
         public EstadoLuchador ConSupersalto(bool supersalto) =>
-            new EstadoLuchador(Posicion, Velocidad, MiraDerecha, Accion, FramesEnAccion, FramesHitstop, FramesAturdimiento, GolpeConectado, BotonesAnteriores, Ataque, AtaqueEnBufer, FramesBufer, GolpesEnCombo, Vida, GolpeBloqueado, FramesDesdeAgachado, supersalto, VidaRecuperable, FramesSinRecibirGolpe, Barra, FramesProteccionAgarre, AgarraHaciaAtras);
+            new EstadoLuchador(Posicion, Velocidad, MiraDerecha, Accion, FramesEnAccion, FramesHitstop, FramesAturdimiento, GolpeConectado, BotonesAnteriores, Ataque, AtaqueEnBufer, FramesBufer, GolpesEnCombo, Vida, GolpeBloqueado, FramesDesdeAgachado, supersalto, VidaRecuperable, FramesSinRecibirGolpe, Barra, FramesProteccionAgarre, AgarraHaciaAtras, DashAereoUsado);
 
         public EstadoLuchador ConVidaRecuperable(int vidaRecuperable) =>
-            new EstadoLuchador(Posicion, Velocidad, MiraDerecha, Accion, FramesEnAccion, FramesHitstop, FramesAturdimiento, GolpeConectado, BotonesAnteriores, Ataque, AtaqueEnBufer, FramesBufer, GolpesEnCombo, Vida, GolpeBloqueado, FramesDesdeAgachado, Supersalto, vidaRecuperable, FramesSinRecibirGolpe, Barra, FramesProteccionAgarre, AgarraHaciaAtras);
+            new EstadoLuchador(Posicion, Velocidad, MiraDerecha, Accion, FramesEnAccion, FramesHitstop, FramesAturdimiento, GolpeConectado, BotonesAnteriores, Ataque, AtaqueEnBufer, FramesBufer, GolpesEnCombo, Vida, GolpeBloqueado, FramesDesdeAgachado, Supersalto, vidaRecuperable, FramesSinRecibirGolpe, Barra, FramesProteccionAgarre, AgarraHaciaAtras, DashAereoUsado);
 
         public EstadoLuchador ConFramesSinRecibirGolpe(int frames) =>
-            new EstadoLuchador(Posicion, Velocidad, MiraDerecha, Accion, FramesEnAccion, FramesHitstop, FramesAturdimiento, GolpeConectado, BotonesAnteriores, Ataque, AtaqueEnBufer, FramesBufer, GolpesEnCombo, Vida, GolpeBloqueado, FramesDesdeAgachado, Supersalto, VidaRecuperable, frames, Barra, FramesProteccionAgarre, AgarraHaciaAtras);
+            new EstadoLuchador(Posicion, Velocidad, MiraDerecha, Accion, FramesEnAccion, FramesHitstop, FramesAturdimiento, GolpeConectado, BotonesAnteriores, Ataque, AtaqueEnBufer, FramesBufer, GolpesEnCombo, Vida, GolpeBloqueado, FramesDesdeAgachado, Supersalto, VidaRecuperable, frames, Barra, FramesProteccionAgarre, AgarraHaciaAtras, DashAereoUsado);
 
         public EstadoLuchador ConBarra(int barra) =>
-            new EstadoLuchador(Posicion, Velocidad, MiraDerecha, Accion, FramesEnAccion, FramesHitstop, FramesAturdimiento, GolpeConectado, BotonesAnteriores, Ataque, AtaqueEnBufer, FramesBufer, GolpesEnCombo, Vida, GolpeBloqueado, FramesDesdeAgachado, Supersalto, VidaRecuperable, FramesSinRecibirGolpe, barra, FramesProteccionAgarre, AgarraHaciaAtras);
+            new EstadoLuchador(Posicion, Velocidad, MiraDerecha, Accion, FramesEnAccion, FramesHitstop, FramesAturdimiento, GolpeConectado, BotonesAnteriores, Ataque, AtaqueEnBufer, FramesBufer, GolpesEnCombo, Vida, GolpeBloqueado, FramesDesdeAgachado, Supersalto, VidaRecuperable, FramesSinRecibirGolpe, barra, FramesProteccionAgarre, AgarraHaciaAtras, DashAereoUsado);
 
         public EstadoLuchador ConProteccionAgarre(int frames) =>
-            new EstadoLuchador(Posicion, Velocidad, MiraDerecha, Accion, FramesEnAccion, FramesHitstop, FramesAturdimiento, GolpeConectado, BotonesAnteriores, Ataque, AtaqueEnBufer, FramesBufer, GolpesEnCombo, Vida, GolpeBloqueado, FramesDesdeAgachado, Supersalto, VidaRecuperable, FramesSinRecibirGolpe, Barra, frames, AgarraHaciaAtras);
+            new EstadoLuchador(Posicion, Velocidad, MiraDerecha, Accion, FramesEnAccion, FramesHitstop, FramesAturdimiento, GolpeConectado, BotonesAnteriores, Ataque, AtaqueEnBufer, FramesBufer, GolpesEnCombo, Vida, GolpeBloqueado, FramesDesdeAgachado, Supersalto, VidaRecuperable, FramesSinRecibirGolpe, Barra, frames, AgarraHaciaAtras, DashAereoUsado);
 
         public EstadoLuchador ConAgarreHaciaAtras(bool haciaAtras) =>
-            new EstadoLuchador(Posicion, Velocidad, MiraDerecha, Accion, FramesEnAccion, FramesHitstop, FramesAturdimiento, GolpeConectado, BotonesAnteriores, Ataque, AtaqueEnBufer, FramesBufer, GolpesEnCombo, Vida, GolpeBloqueado, FramesDesdeAgachado, Supersalto, VidaRecuperable, FramesSinRecibirGolpe, Barra, FramesProteccionAgarre, haciaAtras);
+            new EstadoLuchador(Posicion, Velocidad, MiraDerecha, Accion, FramesEnAccion, FramesHitstop, FramesAturdimiento, GolpeConectado, BotonesAnteriores, Ataque, AtaqueEnBufer, FramesBufer, GolpesEnCombo, Vida, GolpeBloqueado, FramesDesdeAgachado, Supersalto, VidaRecuperable, FramesSinRecibirGolpe, Barra, FramesProteccionAgarre, haciaAtras, DashAereoUsado);
+
+        public EstadoLuchador ConDashAereoUsado(bool usado) =>
+            new EstadoLuchador(Posicion, Velocidad, MiraDerecha, Accion, FramesEnAccion, FramesHitstop, FramesAturdimiento, GolpeConectado, BotonesAnteriores, Ataque, AtaqueEnBufer, FramesBufer, GolpesEnCombo, Vida, GolpeBloqueado, FramesDesdeAgachado, Supersalto, VidaRecuperable, FramesSinRecibirGolpe, Barra, FramesProteccionAgarre, AgarraHaciaAtras, usado);
 
         public SumaVerificacion AgregarA(SumaVerificacion suma) =>
             suma.Agregar(Posicion)
@@ -247,6 +256,7 @@ namespace FgcTag.Nucleo.Combate
                 .Agregar(FramesSinRecibirGolpe)
                 .Agregar(Barra)
                 .Agregar(FramesProteccionAgarre)
-                .Agregar(AgarraHaciaAtras);
+                .Agregar(AgarraHaciaAtras)
+                .Agregar(DashAereoUsado);
     }
 }

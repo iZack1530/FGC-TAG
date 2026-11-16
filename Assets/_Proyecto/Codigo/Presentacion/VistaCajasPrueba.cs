@@ -114,13 +114,13 @@ namespace FgcTag.Presentacion
         }
 
         /// <summary>
-        /// Asistente: una caja más estrecha que la de un luchador, que aparece agachada mientras
-        /// llega y se endereza al atacar, con su caja de golpe en rojo durante los frames activos.
+        /// Asistente: su caja de daño real, detrás del plano de los luchadores. Con su tono mientras
+        /// ataca, aclarada mientras llega o se retira y en negro si lo golpean; su caja de golpe se
+        /// dibuja en rojo durante los frames activos.
         /// </summary>
         private sealed class AsistenteVisual
         {
-            private const float FactorAncho = 0.7f;
-            private const float FactorAlturaAlLlegar = 0.6f;
+            private const float AclaradoFueraDelAtaque = 0.45f;
 
             private readonly GameObject _cuerpo;
             private readonly GameObject _cajaGolpe;
@@ -154,16 +154,20 @@ namespace FgcTag.Presentacion
                 }
 
                 var parametros = equipo.Obtener(asistente.Miembro);
+                var movimiento = parametros.Movimientos.Asistencia;
                 var frameDelAtaque = asistente.Frames - framesLlegada;
-                var ancho = parametros.MedioAnchoEmpuje.AFlotante() * 2f * FactorAncho;
-                var alto = parametros.MedioAltoEmpuje.AFlotante() * 2f * (frameDelAtaque < 0 ? FactorAlturaAlLlegar : 1f);
+                var atacando = !asistente.FueGolpeado && frameDelAtaque >= 0 && frameDelAtaque < movimiento.DuracionTotal;
+                var cajaDanio = SimuladorEquipos.CajaDanioDelAsistente(asistente, parametros);
+                var ancho = cajaDanio.MedioAncho.AFlotante() * 2f;
+                var alto = cajaDanio.MedioAlto.AFlotante() * 2f;
 
-                _material.color = colores[asistente.Miembro];
-                _cuerpo.transform.localPosition = new Vector3(asistente.Posicion.X.AFlotante(), alto / 2f, GrosorProfundidad);
+                _material.color = asistente.FueGolpeado
+                    ? ColorImpactoGolpeado
+                    : atacando ? colores[asistente.Miembro] : Color.Lerp(colores[asistente.Miembro], Color.white, AclaradoFueraDelAtaque);
+                _cuerpo.transform.localPosition = new Vector3(cajaDanio.Centro.X.AFlotante(), cajaDanio.Centro.Y.AFlotante(), GrosorProfundidad);
                 _cuerpo.transform.localScale = new Vector3(ancho, alto, GrosorProfundidad);
 
-                var movimiento = parametros.Movimientos.Asistencia;
-                var golpeando = frameDelAtaque >= 0 && movimiento.EstaActivo(frameDelAtaque);
+                var golpeando = atacando && movimiento.EstaActivo(frameDelAtaque);
                 _cajaGolpe.SetActive(golpeando);
 
                 if (!golpeando)
@@ -342,6 +346,8 @@ namespace FgcTag.Presentacion
                         return 0.8f;
                     case AccionLuchador.Agarrado:
                         return 0.7f;
+                    case AccionLuchador.Dash:
+                        return 0.9f;
                     case AccionLuchador.Noqueado:
                     case AccionLuchador.Derribado:
                         return 0.25f;

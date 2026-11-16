@@ -211,8 +211,36 @@ namespace FgcTag.Pruebas.Nucleo
             velocidadLanzamiento: new VectorFijo(Fijo.DesdeFraccion(1, 8), Fijo.DesdeFraccion(1, 4)),
             aturdimientoLanzado: 60);
 
-        /// <summary>Una dirección más el golpe fuerte es un agarre a 1.5 unidades o menos; 8 frames de protección tras un aturdimiento.</summary>
-        public static readonly ReglasAgarre Agarres = new ReglasAgarre(framesProteccion: 8, distanciaActivacion: Fijo.DesdeFraccion(3, 2));
+        /// <summary>
+        /// Una dirección más el golpe fuerte es un agarre a 1.5 unidades o menos; 8 frames de
+        /// protección tras un aturdimiento. El rival sujeto tiene 9 frames para escapar; un agarre
+        /// roto separa a los dos durante 12 frames, empezando a 1/8 de unidad por frame.
+        /// </summary>
+        public static readonly ReglasAgarre Agarres = new ReglasAgarre(
+            framesProteccion: 8,
+            distanciaActivacion: Fijo.DesdeFraccion(3, 2),
+            framesVentanaEscape: 9,
+            framesAgarreRoto: 12,
+            retrocesoAlEscapar: Fijo.DesdeFraccion(1, 8));
+
+        /// <summary>
+        /// Dash en tierra: 12 frames, empieza a 1/2 por frame (3/8 hacia atrás) y pierde 1/32 por
+        /// frame; se cancela con un ataque desde el frame 2 y agachándose o saltando desde el 4.
+        /// Plink: 2 frames. Dash aéreo: 8 frames a 1/2 por frame, cancelable desde el frame 3, a
+        /// 1 unidad de altura o más.
+        /// </summary>
+        public static readonly ParametrosDash Dash = new ParametrosDash(
+            framesDash: 12,
+            framesMinimosParaCancelar: 4,
+            framesMinimosParaAtacar: 2,
+            velocidadAdelante: Fijo.Medio,
+            velocidadAtras: Fijo.DesdeFraccion(3, 8),
+            friccion: Fijo.DesdeFraccion(1, 32),
+            ventanaPlink: 2,
+            framesDashAereo: 8,
+            framesMinimosDashAereo: 3,
+            velocidadDashAereo: Fijo.Medio,
+            alturaMinimaDashAereo: Fijo.Uno);
 
         /// <summary>
         /// Barras de 100 unidades, 7 como máximo. Del daño base: 5 % al ejecutar, 20 % más al
@@ -250,6 +278,7 @@ namespace FgcTag.Pruebas.Nucleo
                 velocidadAtras: Fijo.DesdeFraccion(1, 10),
                 velocidadVerticalSupersalto: Fijo.DesdeFraccion(3, 5),
                 ventanaSupersalto: 6),
+            dash: Dash,
             medidasDanio: new MedidasCajaDanio(
                 medioAncho: Fijo.Medio,
                 medioAltoDePie: Fijo.Uno,
@@ -318,6 +347,9 @@ namespace FgcTag.Pruebas.Nucleo
         /// <summary>El asistente tarda 6 frames en llegar y después hace el golpe medio (golpea 6 frames más tarde).</summary>
         public const int FramesLlegadaAsistencia = 6;
 
+        /// <summary>Tras su ataque, el asistente se queda 10 frames más en pantalla. Aparece 1 unidad por delante del activo y recibe un 50 % más de daño.</summary>
+        public const int FramesRetiradaAsistencia = 10;
+
         public const int FramesEsperaAsistencia = 90;
 
         /// <summary>Vida máxima de los tres miembros de cada equipo de prueba.</summary>
@@ -344,7 +376,10 @@ namespace FgcTag.Pruebas.Nucleo
             framesEntrada: FramesEntrada,
             desplazamientoEntrada: VectorFijo.DesdeEnteros(2, 2),
             framesSalida: FramesSalida,
-            velocidadSalida: new VectorFijo(Fijo.DesdeFraccion(1, 4), Fijo.DesdeFraccion(1, 4)));
+            velocidadSalida: new VectorFijo(Fijo.DesdeFraccion(1, 4), Fijo.DesdeFraccion(1, 4)),
+            framesRetiradaAsistencia: FramesRetiradaAsistencia,
+            distanciaAsistencia: Fijo.Uno,
+            porcentajeDanioAAsistentes: 150);
 
         public static EstadoCombateEquipos InicialPorEquipos(int x1, int x2) =>
             EstadoCombateEquipos.Crear(VectorFijo.DesdeEnteros(x1, 0), VectorFijo.DesdeEnteros(x2, 0), Equipos);

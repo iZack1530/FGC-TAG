@@ -56,11 +56,11 @@ namespace FgcTag.Pruebas.Nucleo
         }
 
         [Test]
-        public void ConVariosBotonesALaVezSaleElMasFuerte()
+        public void ConUnGolpeYElEspecialALaVezSaleElEspecial()
         {
-            var estado = SimularJugador1(Inicial(-5, 5), BotonesEntrada.Debil | BotonesEntrada.Medio | BotonesEntrada.Fuerte, 1);
+            var estado = SimularJugador1(Inicial(-5, 5), BotonesEntrada.Fuerte | BotonesEntrada.Especial, 1);
 
-            Assert.AreEqual(TipoAtaque.Fuerte, estado.Luchador1.Ataque);
+            Assert.AreEqual(TipoAtaque.Especial, estado.Luchador1.Ataque);
         }
 
         [Test]

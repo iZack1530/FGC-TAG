@@ -66,6 +66,15 @@ namespace FgcTag.Nucleo.Combate
 
         /// <summary>Sujeto por el rival hasta que lo lanza; no recibe golpes mientras dura.</summary>
         Agarrado = 21,
+
+        /// <summary>Separándose del rival tras escapar de un agarre: los dos retroceden sin control y sin recibir golpes.</summary>
+        AgarreRoto = 22,
+
+        /// <summary>Dash en tierra: un impulso que se frena solo; no bloquea y se cancela agachándose, atacando o saltando.</summary>
+        Dash = 23,
+
+        /// <summary>Dash aéreo: avanza en horizontal sin caer; no bloquea y se cancela con un ataque aéreo.</summary>
+        DashAereo = 24,
     }
 
     public static class EstadosAccion
@@ -93,7 +102,8 @@ namespace FgcTag.Nucleo.Combate
             accion == AccionLuchador.GolpeadoEnAire ||
             accion == AccionLuchador.BloqueandoEnAire ||
             accion == AccionLuchador.RecuperandoEnAire ||
-            accion == AccionLuchador.Entrando;
+            accion == AccionLuchador.Entrando ||
+            accion == AccionLuchador.DashAereo;
 
         /// <summary>
         /// En el aire se bloquea durante un salto libre, encadenando bloqueos o al recuperarse de
@@ -138,7 +148,8 @@ namespace FgcTag.Nucleo.Combate
             accion == AccionLuchador.Derribado ||
             accion == AccionLuchador.Noqueado ||
             accion == AccionLuchador.Agarrando ||
-            accion == AccionLuchador.Agarrado;
+            accion == AccionLuchador.Agarrado ||
+            accion == AccionLuchador.AgarreRoto;
 
         /// <summary>Estados que renuevan la protección contra agarres: mientras duran, y unos frames después, no se puede agarrar al luchador.</summary>
         public static bool ProtegeDeAgarres(AccionLuchador accion) =>
@@ -147,7 +158,8 @@ namespace FgcTag.Nucleo.Combate
             accion == AccionLuchador.Derribado ||
             accion == AccionLuchador.RecuperandoEnAire ||
             accion == AccionLuchador.BloqueandoEnAire ||
-            accion == AccionLuchador.Agarrado;
+            accion == AccionLuchador.Agarrado ||
+            accion == AccionLuchador.AgarreRoto;
 
         /// <summary>Recibiendo un combo: el siguiente golpe cuenta como parte de él.</summary>
         public static bool EstaEnCombo(AccionLuchador accion) =>

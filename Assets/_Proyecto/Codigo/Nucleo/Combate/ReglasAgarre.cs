@@ -18,12 +18,33 @@ namespace FgcTag.Nucleo.Combate
         /// </summary>
         public readonly Fijo DistanciaActivacion;
 
-        public ReglasAgarre(int framesProteccion, Fijo distanciaActivacion)
+        /// <summary>
+        /// Frames, desde que el rival lo sujeta, durante los que el luchador puede escapar del
+        /// agarre pulsando el mismo comando: una dirección más el golpe fuerte.
+        /// </summary>
+        public readonly int FramesVentanaEscape;
+
+        /// <summary>Frames que los dos luchadores pasan separándose, sin control, tras un agarre roto.</summary>
+        public readonly int FramesAgarreRoto;
+
+        /// <summary>Velocidad inicial por frame con la que cada luchador se aleja del otro tras un agarre roto.</summary>
+        public readonly Fijo RetrocesoAlEscapar;
+
+        public ReglasAgarre(int framesProteccion, Fijo distanciaActivacion, int framesVentanaEscape, int framesAgarreRoto, Fijo retrocesoAlEscapar)
         {
             if (framesProteccion < 0 || distanciaActivacion < Fijo.Cero)
             {
                 throw new ArgumentOutOfRangeException(nameof(framesProteccion), "La protección y la distancia de activación no pueden ser negativas.");
             }
+
+            if (framesVentanaEscape < 0 || framesAgarreRoto < 1 || retrocesoAlEscapar < Fijo.Cero)
+            {
+                throw new ArgumentOutOfRangeException(nameof(framesVentanaEscape), "La ventana de escape y el retroceso no pueden ser negativos y el agarre roto dura al menos 1 frame.");
+            }
+
+            FramesVentanaEscape = framesVentanaEscape;
+            FramesAgarreRoto = framesAgarreRoto;
+            RetrocesoAlEscapar = retrocesoAlEscapar;
 
             FramesProteccion = framesProteccion;
             DistanciaActivacion = distanciaActivacion;

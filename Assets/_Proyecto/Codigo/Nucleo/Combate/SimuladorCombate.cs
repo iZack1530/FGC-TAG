@@ -38,7 +38,7 @@ namespace FgcTag.Nucleo.Combate
                 : ResolucionGolpes.Resolver(empujado1, empujado2, entradas, configuracion);
             var (agarrado1, agarrado2) = estado.RondaTerminada
                 ? (golpeado1, golpeado2)
-                : ResolucionAgarres.Resolver(golpeado1, golpeado2, configuracion);
+                : ResolucionAgarres.Resolver(golpeado1, golpeado2, entradas, configuracion);
             var (orientado1, orientado2) = Orientar(agarrado1, agarrado2);
 
             if (estado.RondaTerminada)
@@ -123,14 +123,46 @@ namespace FgcTag.Nucleo.Combate
 
             var avanzado = conBufer.EnHitstop
                 ? conBufer.ConHitstop(conBufer.FramesHitstop - 1)
-                : ContarFramesDesdeAgachado(AlEmpezarUnAtaque(Actuar(conBufer, botones, parametros, configuracion), luchador, botones, rival, parametros, configuracion));
+                : ContarFramesDesdeAgachado(ConBarraAlEjecutar(
+                    AlEmpezarUnAtaque(Actuar(conBufer, botones, SentidoHacia(luchador, rival), parametros, configuracion), luchador, botones, rival, parametros, configuracion),
+                    parametros,
+                    configuracion.Barra));
 
             return ContarProteccionDeAgarre(avanzado, configuracion.Agarres).ConBotonesAnteriores(botones);
         }
 
+        /// <summary>Sentido horizontal (+1 o -1) en el que está el rival; si están en la misma X, hacia donde mira el luchador.</summary>
+        private static int SentidoHacia(in EstadoLuchador luchador, in EstadoLuchador rival) =>
+            rival.Posicion.X != luchador.Posicion.X
+                ? (rival.Posicion.X > luchador.Posicion.X ? 1 : -1)
+                : luchador.SentidoAdelante;
+
+        /// <summary>
+        /// Ejecutar un ataque da un poco de barra cuando llega a su primer frame activo, conecte o
+        /// no. Un ataque cancelado antes (por ejemplo, con un plink dash) no da nada.
+        /// </summary>
+        private static EstadoLuchador ConBarraAlEjecutar(in EstadoLuchador luchador, in ParametrosLuchador parametros, in ReglasBarra barra)
+        {
+            if (EstadosAccion.EstaAtacando(luchador.Accion))
+            {
+                var movimiento = parametros.MovimientoEnCurso(luchador);
+
+                return luchador.FramesEnAccion == movimiento.Arranque ? luchador.ConBarra(barra.AlEjecutar(luchador.Barra, movimiento.Danio)) : luchador;
+            }
+
+            if (luchador.Accion == AccionLuchador.IntentandoAgarre)
+            {
+                var agarre = parametros.AgarreEnCurso(luchador);
+
+                return luchador.FramesEnAccion == agarre.Arranque ? luchador.ConBarra(barra.AlEjecutar(luchador.Barra, agarre.Danio)) : luchador;
+            }
+
+            return luchador;
+        }
+
         /// <summary>
         /// En el frame en que empieza un ataque: una dirección más el golpe fuerte, cerca de un
-        /// rival en tierra, se convierte en agarre; y ejecutar cualquier ataque da un poco de barra.
+        /// rival en tierra, se convierte en agarre.
         /// </summary>
         private static EstadoLuchador AlEmpezarUnAtaque(
             in EstadoLuchador luchador,
@@ -150,15 +182,15 @@ namespace FgcTag.Nucleo.Combate
 
             if (esCancelacion || !EsAgarre(luchador, antes, botones, rival, configuracion.Agarres))
             {
-                return luchador.ConBarra(configuracion.Barra.AlEjecutar(luchador.Barra, parametros.MovimientoEnCurso(luchador).Danio));
+                return luchador;
             }
 
             var haciaAtras = InterpretacionEntradas.DireccionHorizontal(botones) != luchador.SentidoAdelante;
 
             return SinAtaque(luchador)
+                .ConVelocidad(VectorFijo.Cero)
                 .ConAccionNueva(AccionLuchador.IntentandoAgarre)
-                .ConAgarreHaciaAtras(haciaAtras)
-                .ConBarra(configuracion.Barra.AlEjecutar(luchador.Barra, parametros.Movimientos.Agarre.Danio));
+                .ConAgarreHaciaAtras(haciaAtras);
         }
 
         /// <summary>
@@ -275,6 +307,11 @@ namespace FgcTag.Nucleo.Combate
         /// </summary>
         private static EstadoLuchador ContinuarAtaqueEnTierra(in EstadoLuchador luchador, BotonesEntrada botones, in ParametrosLuchador parametros)
         {
+            if (EsPlinkDash(luchador, botones, parametros.Dash))
+            {
+                return IniciarDash(luchador, botones, parametros.Dash);
+            }
+
             if (PuedeCancelar(luchador))
             {
                 return IniciarAtaqueEnTierra(luchador, botones);
@@ -290,13 +327,14 @@ namespace FgcTag.Nucleo.Combate
             }
 
             return luchador.FramesEnAccion + 1 >= movimiento.DuracionTotal
-                ? ControlarEnTierra(SinAtaque(luchador), botones, parametros)
-                : luchador.ConAccion(luchador.Accion);
+                ? ControlarEnTierra(SinAtaque(luchador).ConVelocidad(VectorFijo.Cero), botones, parametros)
+                : Impulsado(luchador.ConAccion(luchador.Accion), parametros.Dash.Friccion);
         }
 
         private static EstadoLuchador Actuar(
             in EstadoLuchador luchador,
             BotonesEntrada botones,
+            int sentidoRival,
             in ParametrosLuchador parametros,
             in ConfiguracionCombate configuracion)
         {
@@ -315,6 +353,20 @@ namespace FgcTag.Nucleo.Combate
 
                 case AccionLuchador.Noqueado:
                     return Deslizar(luchador, configuracion.FriccionRetroceso);
+
+                case AccionLuchador.EnAire when QuiereDashAereo(luchador, botones, parametros.Dash):
+                    return IniciarDashAereo(luchador, botones, sentidoRival, parametros.Dash);
+
+                case AccionLuchador.DashAereo:
+                    return ContinuarDashAereo(luchador, parametros);
+
+                case AccionLuchador.Dash:
+                    return ContinuarDash(luchador, botones, parametros);
+
+                case AccionLuchador.AgarreRoto:
+                    return luchador.FramesEnAccion + 1 >= configuracion.Agarres.FramesAgarreRoto
+                        ? ControlarEnTierra(luchador.ConVelocidad(VectorFijo.Cero), botones, parametros)
+                        : Deslizar(luchador, configuracion.FriccionRetroceso);
 
                 case AccionLuchador.EnAire:
                 case AccionLuchador.AtacandoEnAire:
@@ -360,6 +412,9 @@ namespace FgcTag.Nucleo.Combate
                 case AccionLuchador.Entrando:
                     return MoverEnAire(luchador.ConAccion(AccionLuchador.Entrando), parametros.Salto.Gravedad, parametros.Salto.FramesAterrizaje);
 
+                case AccionLuchador.IntentandoAgarre when EsPlinkDash(luchador, botones, parametros.Dash):
+                    return IniciarDash(luchador, botones, parametros.Dash);
+
                 case AccionLuchador.IntentandoAgarre:
                     return luchador.FramesEnAccion + 1 >= parametros.AgarreEnCurso(luchador).DuracionAlFallar
                         ? ControlarEnTierra(luchador, botones, parametros)
@@ -383,8 +438,145 @@ namespace FgcTag.Nucleo.Combate
             }
         }
 
+        /// <summary>
+        /// Comando de dash con control en tierra: dos botones de golpe mantenidos y uno de ellos
+        /// pulsado hace poco (está en el búfer), sin mantener abajo.
+        /// </summary>
+        private static bool QuiereDash(in EstadoLuchador luchador, BotonesEntrada botones) =>
+            luchador.TieneAtaqueEnBufer &&
+            LecturaAtaques.EsGolpe(luchador.AtaqueEnBufer) &&
+            LecturaAtaques.DosGolpesMantenidos(botones) &&
+            InterpretacionEntradas.DireccionVertical(botones) >= 0;
+
+        /// <summary>
+        /// Plink dash: en los primeros frames de un ataque en tierra que aún no conectó, pulsar
+        /// otro botón de golpe sin soltar el primero cambia el ataque por un dash.
+        /// </summary>
+        private static bool EsPlinkDash(in EstadoLuchador luchador, BotonesEntrada botones, in ParametrosDash dash) =>
+            luchador.FramesEnAccion < dash.VentanaPlink &&
+            !luchador.GolpeConectado &&
+            LecturaAtaques.EsGolpe(LecturaAtaques.RecienPulsado(botones, luchador.BotonesAnteriores)) &&
+            LecturaAtaques.DosGolpesMantenidos(botones) &&
+            InterpretacionEntradas.DireccionVertical(botones) >= 0;
+
+        /// <summary>El dash va hacia donde mira el luchador (hacia el rival) o, si mantiene atrás, en sentido contrario.</summary>
+        private static EstadoLuchador IniciarDash(in EstadoLuchador luchador, BotonesEntrada botones, in ParametrosDash dash)
+        {
+            var haciaAtras = InterpretacionEntradas.DireccionHorizontal(botones) == -luchador.SentidoAdelante;
+            var velocidad = haciaAtras ? dash.VelocidadAtras * -luchador.SentidoAdelante : dash.VelocidadAdelante * luchador.SentidoAdelante;
+
+            var enDash = SinAtaque(luchador)
+                .ConBufer(TipoAtaque.Ninguno, 0)
+                .ConVelocidad(new VectorFijo(velocidad, Fijo.Cero))
+                .ConAccionNueva(AccionLuchador.Dash);
+
+            return Impulsado(enDash, dash.Friccion);
+        }
+
+        /// <summary>
+        /// Un frame de impulso en el suelo: el luchador avanza con su velocidad horizontal y la
+        /// fricción la reduce. No cambia su acción, así que sirve para el dash y para el ataque
+        /// que hereda su impulso.
+        /// </summary>
+        private static EstadoLuchador Impulsado(in EstadoLuchador luchador, Fijo friccion)
+        {
+            var velocidadX = luchador.Velocidad.X;
+            var frenada = Fijo.Max(Fijo.Abs(velocidadX) - friccion, Fijo.Cero) * Fijo.Signo(velocidadX);
+
+            return luchador
+                .ConX(luchador.Posicion.X + velocidadX)
+                .ConVelocidad(new VectorFijo(frenada, Fijo.Cero));
+        }
+
+        /// <summary>
+        /// El dash se desliza perdiendo velocidad. Se cancela pronto con un ataque, que hereda el
+        /// impulso que le quede y sigue deslizándose, y un poco más
+        /// tarde, manteniendo abajo (queda agachado: la base del wavedash) o saltando. Como el
+        /// dash no empieza con abajo mantenido, para repetirlo hay que soltar abajo.
+        /// </summary>
+        private static EstadoLuchador ContinuarDash(in EstadoLuchador luchador, BotonesEntrada botones, in ParametrosLuchador parametros)
+        {
+            var dash = parametros.Dash;
+            var frames = luchador.FramesEnAccion + 1;
+            var parado = luchador.ConVelocidad(VectorFijo.Cero);
+
+            if (frames >= dash.FramesDash)
+            {
+                return ControlarEnTierra(parado, botones, parametros);
+            }
+
+            if (frames >= dash.FramesMinimosParaAtacar && luchador.TieneAtaqueEnBufer)
+            {
+                return Impulsado(IniciarAtaqueEnTierra(luchador, botones), dash.Friccion);
+            }
+
+            if (frames >= dash.FramesMinimosParaCancelar)
+            {
+                if (InterpretacionEntradas.DireccionVertical(botones) < 0)
+                {
+                    return parado.ConAccionNueva(AccionLuchador.Agachado);
+                }
+
+                if (InterpretacionEntradas.DireccionVertical(botones) > 0)
+                {
+                    return parado.ConAccionNueva(AccionLuchador.PreSalto).ConSupersalto(false);
+                }
+            }
+
+            return Impulsado(luchador.ConAccion(AccionLuchador.Dash), dash.Friccion);
+        }
+
+        /// <summary>Dash aéreo: durante un salto libre, una vez por salto y por encima de la altura mínima.</summary>
+        private static bool QuiereDashAereo(in EstadoLuchador luchador, BotonesEntrada botones, in ParametrosDash dash) =>
+            !luchador.DashAereoUsado &&
+            luchador.TieneAtaqueEnBufer &&
+            LecturaAtaques.EsGolpe(luchador.AtaqueEnBufer) &&
+            LecturaAtaques.DosGolpesMantenidos(botones) &&
+            luchador.Posicion.Y >= dash.AlturaMinimaDashAereo;
+
+        /// <summary>El dash aéreo va hacia el rival o, si se mantiene la dirección contraria, se aleja de él.</summary>
+        private static EstadoLuchador IniciarDashAereo(in EstadoLuchador luchador, BotonesEntrada botones, int sentidoRival, in ParametrosDash dash)
+        {
+            var sentido = InterpretacionEntradas.DireccionHorizontal(botones) == -sentidoRival ? -sentidoRival : sentidoRival;
+            var velocidad = new VectorFijo(dash.VelocidadDashAereo * sentido, Fijo.Cero);
+
+            return luchador
+                .ConBufer(TipoAtaque.Ninguno, 0)
+                .ConDashAereoUsado(true)
+                .ConVelocidad(velocidad)
+                .ConPosicion(luchador.Posicion + velocidad)
+                .ConAccionNueva(AccionLuchador.DashAereo);
+        }
+
+        /// <summary>
+        /// Avanza en horizontal sin caer. Pasados sus frames mínimos se cancela con un ataque
+        /// aéreo, que conserva el impulso; al terminar, el luchador sigue cayendo con ese impulso.
+        /// </summary>
+        private static EstadoLuchador ContinuarDashAereo(in EstadoLuchador luchador, in ParametrosLuchador parametros)
+        {
+            var dash = parametros.Dash;
+            var frames = luchador.FramesEnAccion + 1;
+
+            if (frames >= dash.FramesDashAereo)
+            {
+                return MoverEnAire(luchador.ConAccionNueva(AccionLuchador.EnAire), parametros.Salto.Gravedad, parametros.Salto.FramesAterrizaje);
+            }
+
+            if (frames >= dash.FramesMinimosDashAereo && TieneAtaqueAereoEnBufer(luchador))
+            {
+                return MoverEnAire(IniciarAtaque(luchador, AccionLuchador.AtacandoEnAire), parametros.Salto.Gravedad, parametros.Salto.FramesAterrizaje);
+            }
+
+            return luchador.ConAccion(AccionLuchador.DashAereo).ConPosicion(luchador.Posicion + luchador.Velocidad);
+        }
+
         private static EstadoLuchador ControlarEnTierra(in EstadoLuchador luchador, BotonesEntrada botones, in ParametrosLuchador parametros)
         {
+            if (QuiereDash(luchador, botones))
+            {
+                return IniciarDash(luchador, botones, parametros.Dash);
+            }
+
             if (luchador.TieneAtaqueEnBufer)
             {
                 return IniciarAtaqueEnTierra(luchador, botones);
@@ -495,7 +687,7 @@ namespace FgcTag.Nucleo.Combate
                     .ConAccionNueva(AccionLuchador.Noqueado);
             }
 
-            var enReposo = SinAtaque(luchador).ConVelocidad(VectorFijo.Cero).ConAturdimiento(0).ConSupersalto(false);
+            var enReposo = SinAtaque(luchador).ConVelocidad(VectorFijo.Cero).ConAturdimiento(0).ConSupersalto(false).ConDashAereoUsado(false);
 
             if (luchador.Accion == AccionLuchador.GolpeadoEnAire)
             {
